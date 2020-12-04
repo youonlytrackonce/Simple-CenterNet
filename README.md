@@ -1,1 +1,1 @@
-# Lightweigt-CenterNet
+# Simple-CenterNet
