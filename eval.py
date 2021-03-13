@@ -57,8 +57,6 @@ if __name__ == "__main__":
             batch_output = model.post_processing(batch_output, batch_org_img_shape, batch_padded_ltrb, confidence_threshold=1e-2)
             
             for i in range(len(batch_img)):
-                
-                
                 idx = batch_idx[i] # data index
                 org_img_shape = batch_org_img_shape[i] # (w, h)
                 padded_ltrb = batch_padded_ltrb[i]
@@ -101,8 +99,8 @@ if __name__ == "__main__":
                         
                         cv2.rectangle(img=img, pt1=(l, t), pt2=(r, b), color=(0, 255, 0), thickness=3)
 
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
+                # cv2.imshow('img', img)
+                # cv2.waitKey(1)
                 
         mean_ap = metric.compute_map(class_tp_fp_score_batch, gt_bboxes_batch, num_classes=model.num_classes)
         print(mean_ap)

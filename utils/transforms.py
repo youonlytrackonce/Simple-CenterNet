@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import random
 
-def xywh2xyxy(bboxes_cxcywh: np.ndarray):
+def cxcywh2xyxy(bboxes_cxcywh: np.ndarray):
     bboxes_xyxy = bboxes_cxcywh.copy()
     bboxes_xyxy[:, 0] = bboxes_cxcywh[:, 0] - bboxes_cxcywh[:, 2] / 2.
     bboxes_xyxy[:, 1] = bboxes_cxcywh[:, 1] - bboxes_cxcywh[:, 3] / 2.
@@ -10,7 +10,7 @@ def xywh2xyxy(bboxes_cxcywh: np.ndarray):
     bboxes_xyxy[:, 3] = bboxes_cxcywh[:, 1] + bboxes_cxcywh[:, 3] / 2.
     return bboxes_xyxy
 
-def xyxy2xywh(bboxes_xyxy: np.ndarray):
+def xyxy2cxcywh(bboxes_xyxy: np.ndarray):
     bboxes_cxcywh = bboxes_xyxy.copy()
     bboxes_cxcywh[:, 0] = (bboxes_xyxy[:, 0] + bboxes_xyxy[:, 2]) / 2.
     bboxes_cxcywh[:, 1] = (bboxes_xyxy[:, 1] + bboxes_xyxy[:, 3]) / 2.
@@ -59,9 +59,43 @@ def aspect_ratio_preserved_resize(img, dsize, bboxes_cxcywh=None):
         return img, bboxes_cxcywh, [org_img_width, org_img_height], [pad_left, pad_top, pad_right, pad_bottom]
     return img
 
-def horizontal_flip(img, bboxes_cxxywh, p=0.5):
+def horizontal_flip(img, bboxes_cxcywh, p=0.5):
     if random.random() < p:
         img = cv2.flip(img, 1)#1이 호리즌탈 방향 반전
-        bboxes_cxxywh[:, 0] = 1. - bboxes_cxxywh[:, 0]
-        return img, bboxes_cxxywh
-    return img, bboxes_cxxywh
+        bboxes_cxcywh[:, 0] = 1. - bboxes_cxcywh[:, 0]
+        return img, bboxes_cxcywh
+    return img, bboxes_cxcywh
+
+def random_translation(img, bboxes_cxcywh, p=0.5, border_value=(127, 127, 127)):
+    if random.random() < p:
+        height, width = img.shape[0:2]
+        
+        bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh)
+        
+        min_tx = round(width * np.min(bboxes_xyxy[:, 0]))
+        max_tx = width-round(width * np.max(bboxes_xyxy[:, 2]))
+
+        min_ty = round(height * np.min(bboxes_xyxy[:, 1]))
+        max_ty = height-round(height * np.max(bboxes_xyxy[:, 3]))
+
+        tx = random.randint(-min_tx, max_tx)
+        ty = random.randint(-min_ty, max_ty)
+
+        # translation matrix
+        tm = np.float32([[1, 0, tx],
+                         [0, 1, ty]])  # [1, 0, tx], [1, 0, ty]
+
+        img = cv2.warpAffine(img, tm, (width, height), borderValue=border_value)
+
+        bboxes_xyxy[:, [0, 2]] += (tx / width)
+        bboxes_xyxy[:, [1, 3]] += (ty / height)
+        bboxes_xyxy = np.clip(bboxes_xyxy, 0., 1.)
+
+        bboxes_cxcywh = xyxy2cxcywh(bboxes_xyxy)
+        return img, bboxes_cxcywh
+    return img, bboxes_cxcywh
+    
+    
+    
+    
+    

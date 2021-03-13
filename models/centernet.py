@@ -105,8 +105,9 @@ class CenterNet(nn.Module):
             grid_x = torch.arange(out_w, dtype=out.dtype, device=device).view(1, 1, out_w).repeat(1, out_h, 1)
             
             # localization
-            bboxes_cx = (self.stride * (grid_x + out[:, 0]).flatten(start_dim=1))/self.img_w
-            bboxes_cy = (self.stride * (grid_y + out[:, 1]).flatten(start_dim=1))/self.img_h
+            bboxes_cx = (self.stride * (grid_x + torch.sigmoid(out[:, 0])).flatten(start_dim=1))/self.img_w
+            bboxes_cy = (self.stride * (grid_y + torch.sigmoid(out[:, 1])).flatten(start_dim=1))/self.img_h
+            
             bboxes_w = (self.stride * out[:, 2].flatten(start_dim=1))/self.img_w
             bboxes_h = (self.stride * out[:, 3].flatten(start_dim=1))/self.img_h
             
@@ -160,7 +161,7 @@ class CenterNet(nn.Module):
         batch_size, _, heatmap_height, heatmap_width = batch_pred.shape
         device = batch_pred.device
         
-        loss_offset_xy_function = nn.L1Loss(reduction='sum')
+        loss_offset_xy_function = nn.BCEWithLogitsLoss(reduction='sum')
         loss_wh_function = nn.L1Loss(reduction='sum')
         
         loss_offset_x = torch.tensor(0., dtype=torch.float32, device=device)

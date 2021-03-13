@@ -36,7 +36,11 @@ if __name__ == "__main__":
     model = centernet.CenterNet(pretrained_backbone=True)
     model = model.to(device=device)
     
-    training_set = dataset.DetectionDataset(root="./dataset/VOCDevkit", dataset_name="voc", set="train")
+    training_set = dataset.DetectionDataset(root="./dataset/VOCDevkit",
+                                            dataset_name="voc", 
+                                            set="train",
+                                            use_augmentation=True)
+    
     num_training_set_imgs = len(training_set)
     
     training_set_loader = torch.utils.data.DataLoader(training_set, 
@@ -62,7 +66,15 @@ if __name__ == "__main__":
     writer = SummaryWriter()
     
     start_epoch = 0
-    n_iter = 0
+    if len(opt.weights) == 0:
+            pass
+    else:
+        checkpoint = torch.load(opt.weights)
+        start_epoch = checkpoint['epoch'] + 1
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        
     for epoch in range(start_epoch, opt.total_epoch):
         model.train()
         for i, batch_data in enumerate(training_set_loader):
