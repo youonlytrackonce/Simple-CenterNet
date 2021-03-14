@@ -53,9 +53,9 @@ class DetectionDataset(Dataset):  # for training/testing
             img = cv2.resize(img, dsize=(self.img_w, self.img_h))
         
         #augmentation
-        # if self.use_augmentation:
-        #     img, bboxes_cxcywh = transforms.horizontal_flip(img, bboxes_cxcywh, p=0.5)
-        #     img, bboxes_cxcywh = transforms.random_translation(img, bboxes_cxcywh, p=0.5)
+        if self.use_augmentation:
+            img, bboxes_cxcywh = transforms.horizontal_flip(img, bboxes_cxcywh, p=0.5)
+            img, bboxes_cxcywh = transforms.random_translation(img, bboxes_cxcywh, p=1.0)
 
         #numpy(=opencv)img 2 pytorch tensor        
         img = img[..., ::-1].transpose(2, 0, 1)
