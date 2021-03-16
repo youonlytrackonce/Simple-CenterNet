@@ -39,6 +39,7 @@ if __name__ == "__main__":
     training_set = dataset.DetectionDataset(root="./dataset/VOCDevkit",
                                             dataset_name="voc", 
                                             set="train",
+                                            img_w=opt.img_w, img_h=opt.img_h,
                                             use_augmentation=True)
     
     num_training_set_imgs = len(training_set)
