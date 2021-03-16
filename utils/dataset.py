@@ -13,7 +13,7 @@ class DetectionDataset(Dataset):  # for training/testing
                  root,
                  dataset_name,
                  set,
-                 img_w=416, img_h=416,
+                 img_w=512, img_h=512,
                  use_augmentation=False,
                  keep_ratio=False):
         
@@ -56,6 +56,7 @@ class DetectionDataset(Dataset):  # for training/testing
         if self.use_augmentation:
             img, bboxes_cxcywh = transforms.horizontal_flip(img, bboxes_cxcywh, p=0.5)
             img, bboxes_cxcywh = transforms.random_translation(img, bboxes_cxcywh, p=1.0)
+            img, bboxes_cxcywh = transforms.random_scale(img, bboxes_cxcywh, p=1.0)
 
         #numpy(=opencv)img 2 pytorch tensor        
         img = img[..., ::-1].transpose(2, 0, 1)

@@ -73,6 +73,10 @@ class VOCDetection(object):
                 continue
 
             class_name = obj.find("name").text.lower().strip()
+            
+            if not class_name in CLASSES:
+                continue
+            
             class_index = CLASSES.index(class_name)
             
             bbox = obj.find("bndbox")
@@ -81,7 +85,7 @@ class VOCDetection(object):
             ymin = int(bbox.find("ymin").text)
             xmax = int(bbox.find("xmax").text)
             ymax = int(bbox.find("ymax").text)
-            
+
             cx = ((xmax + xmin)/2.)/img_width
             cy = ((ymax + ymin)/2.)/img_height
             w = (xmax - xmin)/img_width
@@ -96,7 +100,7 @@ class VOCDetection(object):
     
     def __getitem__(self, idx):
         img = cv2.imread(self.images_path[idx], cv2.IMREAD_COLOR)
-        label = self.labels[idx]
+        label = self.labels[idx].copy()
         return img, label
     
     def __len__(self): 

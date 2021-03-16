@@ -66,7 +66,7 @@ def horizontal_flip(img, bboxes_cxcywh, p=0.5):
         return img, bboxes_cxcywh
     return img, bboxes_cxcywh
 
-def random_translation(img, bboxes_cxcywh, p=0.5, border_value=(127, 127, 127)):
+def random_translation(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127)):
     if random.random() < p:
         img_height, img_width = img.shape[0:2]
         
@@ -95,7 +95,81 @@ def random_translation(img, bboxes_cxcywh, p=0.5, border_value=(127, 127, 127)):
         return img, bboxes_cxcywh
     return img, bboxes_cxcywh
     
+def random_scale(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127), lower_bound=0.25, upper_bound=4.0):
+    if random.random() < p:
+        img_height, img_width = img.shape[0:2]
+        
+        bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh)
+        
+        # calculate range
+        min_bbox_w = np.min(bboxes_cxcywh[:, 2]) * img_width
+        min_bbox_h = np.min(bboxes_cxcywh[:, 3]) * img_height
+        
+        if min_bbox_w >= 32 and min_bbox_h >= 32:
+            min_scale = max(32/min_bbox_w, 32/min_bbox_h)
+        else:
+            min_scale = 1.
+            
+        max_bbox_w = np.max(bboxes_cxcywh[:, 2]) * img_width
+        max_bbox_h = np.max(bboxes_cxcywh[:, 3]) * img_height
+        
+        max_scale = max(img_width/max_bbox_w, img_height/max_bbox_h)
+        
+        # clip
+        min_scale = max(min_scale, lower_bound)#lower bound
+        max_scale = min(max_scale, upper_bound)#upper bound
+        
+        cx = img_width//2
+        cy = img_height//2
+        
+        bboxes_xmin = round(img_width * np.min(bboxes_xyxy[:, 0]))
+        bboxes_ymin = round(img_height * np.min(bboxes_xyxy[:, 1]))
+        bboxes_xmax = round(img_width * np.max(bboxes_xyxy[:, 2]))
+        bboxes_ymax = round(img_height * np.max(bboxes_xyxy[:, 3]))
+
+        for _ in range(50):
+            random_scale = random.uniform(min_scale, max_scale)
+            
+            #센터 기준으로 확대 혹은 축소
+            tx = cx - random_scale * cx
+            ty = cy - random_scale * cy
+            
+            transformed_bboxes_xmin = bboxes_xmin * random_scale + tx
+            transformed_bboxes_ymin = bboxes_ymin * random_scale + ty
+            transformed_bboxes_xmax = bboxes_xmax * random_scale + tx
+            transformed_bboxes_ymax = bboxes_ymax * random_scale + ty
+          
+            if transformed_bboxes_xmin < 0 or transformed_bboxes_xmax >= img_width:
+                continue
+
+            if transformed_bboxes_ymin < 0 or transformed_bboxes_ymax >= img_height:
+                continue
+            
+            # scale matrix
+            sm = np.float32([[random_scale, 0, tx],
+                            [0, random_scale, ty]])  # [1, 0, tx], [1, 0, ty]
+
+            img = cv2.warpAffine(img, sm, (img_width, img_height), borderValue=border_value)
+
+            bboxes_xyxy *= random_scale
+            bboxes_xyxy[:, [0, 2]] += (tx / img_width)
+            bboxes_xyxy[:, [1, 3]] += (ty / img_height)
+            bboxes_xyxy = np.clip(bboxes_xyxy, 0., 1.)
+            
+            bboxes_cxcywh = xyxy2cxcywh(bboxes_xyxy)
+            return img, bboxes_cxcywh
+    return img, bboxes_cxcywh
+
+def draw_bboxes(img, bboxes_cxcywh):
+    img_height, img_width = img.shape[:2]
+    bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh)
     
-    
-    
-    
+    bboxes_xyxy[:, [0, 2]] *= img_width
+    bboxes_xyxy[:, [1, 3]] *= img_height
+
+    for bbox_xyxy in bboxes_xyxy:
+        cv2.rectangle(img,
+                      (int(bbox_xyxy[0]), int(bbox_xyxy[1])),
+                      (int(bbox_xyxy[2]), int(bbox_xyxy[3])),
+                      (0, 255, 0),2)
+        
