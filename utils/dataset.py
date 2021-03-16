@@ -13,7 +13,7 @@ class DetectionDataset(Dataset):  # for training/testing
                  root,
                  dataset_name,
                  set,
-                 img_w=480, img_h=480,
+                 img_w=512, img_h=512,
                  use_augmentation=False,
                  keep_ratio=False):
         

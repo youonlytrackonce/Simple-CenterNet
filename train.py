@@ -10,7 +10,7 @@ import os
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='YOLO-v3 tiny Detection')
-    parser.add_argument('--batch-size', default=16, type=int,
+    parser.add_argument('--batch-size', default=32, type=int,
                         help='Batch size for training')
 
     parser.add_argument('--img-w', default=512, type=int)

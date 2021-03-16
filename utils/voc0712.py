@@ -62,8 +62,8 @@ class VOCDetection(object):
         root = tree.getroot()
         
         size = root.find("size")
-        img_width = int(size.find("width").text)
-        img_height = int(size.find("height").text)
+        img_w = int(size.find("width").text)
+        img_h = int(size.find("height").text)
         
         objs = root.findall("object")
         for obj in objs:
@@ -86,10 +86,10 @@ class VOCDetection(object):
             xmax = int(bbox.find("xmax").text)
             ymax = int(bbox.find("ymax").text)
 
-            cx = ((xmax + xmin)/2.)/img_width
-            cy = ((ymax + ymin)/2.)/img_height
-            w = (xmax - xmin)/img_width
-            h = (ymax - ymin)/img_height
+            cx = ((xmax + xmin)/2.)/img_w
+            cy = ((ymax + ymin)/2.)/img_h
+            w = (xmax - xmin)/img_w
+            h = (ymax - ymin)/img_h
             
             label.append([class_index, cx, cy, w, h])
         

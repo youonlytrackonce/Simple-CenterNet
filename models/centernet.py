@@ -187,13 +187,6 @@ class CenterNet(nn.Module):
                 bbox_class = int(bbox[0])
                 
                 bbox_fcx, bbox_fcy, bbox_w, bbox_h = bbox[1:]
-                
-                if bbox_w < 2:
-                    continue
-                
-                if bbox_h < 2:
-                    continue
-                
                 bbox_icx, bbox_icy = int(bbox_fcx), int(bbox_fcy)
                 
                 num_positive_samples += 1.
