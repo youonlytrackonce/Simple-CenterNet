@@ -34,7 +34,7 @@ if __name__ == "__main__":
     model.eval()
     model = model.to(device=device)
     
-    test_set = dataset.DetectionDataset(root="./dataset/VOCDevkit", dataset_name="voc", set="test")
+    test_set = dataset.DetectionDataset(root="./dataset/VOCDevkit", dataset_name="voc", set="test", img_w=opt.img_w, img_h=opt.img_h)
     test_set_loader = torch.utils.data.DataLoader(test_set, 
                                                   opt.batch_size,
                                                   num_workers=opt.num_workers,
