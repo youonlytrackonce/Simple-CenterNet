@@ -68,15 +68,15 @@ def horizontal_flip(img, bboxes_cxcywh, p=0.5):
 
 def random_translation(img, bboxes_cxcywh, p=0.5, border_value=(127, 127, 127)):
     if random.random() < p:
-        height, width = img.shape[0:2]
+        img_height, img_width = img.shape[0:2]
         
         bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh)
         
-        min_tx = round(width * np.min(bboxes_xyxy[:, 0]))
-        max_tx = width-round(width * np.max(bboxes_xyxy[:, 2]))
+        min_tx = round(img_width * np.min(bboxes_xyxy[:, 0]))
+        max_tx = img_width-round(img_width * np.max(bboxes_xyxy[:, 2]))
 
-        min_ty = round(height * np.min(bboxes_xyxy[:, 1]))
-        max_ty = height-round(height * np.max(bboxes_xyxy[:, 3]))
+        min_ty = round(img_height * np.min(bboxes_xyxy[:, 1]))
+        max_ty = img_height-round(img_height * np.max(bboxes_xyxy[:, 3]))
 
         tx = random.randint(-min_tx, max_tx)
         ty = random.randint(-min_ty, max_ty)
@@ -85,10 +85,10 @@ def random_translation(img, bboxes_cxcywh, p=0.5, border_value=(127, 127, 127)):
         tm = np.float32([[1, 0, tx],
                          [0, 1, ty]])  # [1, 0, tx], [1, 0, ty]
 
-        img = cv2.warpAffine(img, tm, (width, height), borderValue=border_value)
+        img = cv2.warpAffine(img, tm, (img_width, img_height), borderValue=border_value)
 
-        bboxes_xyxy[:, [0, 2]] += (tx / width)
-        bboxes_xyxy[:, [1, 3]] += (ty / height)
+        bboxes_xyxy[:, [0, 2]] += (tx / img_width)
+        bboxes_xyxy[:, [1, 3]] += (ty / img_height)
         bboxes_xyxy = np.clip(bboxes_xyxy, 0., 1.)
 
         bboxes_cxcywh = xyxy2cxcywh(bboxes_xyxy)
