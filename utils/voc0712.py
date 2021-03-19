@@ -94,8 +94,7 @@ class VOCDetection(object):
             label.append([class_index, cx, cy, w, h])
         
         label = np.array(label).reshape(-1, 5)
-        label[:, [1, 3]] = np.clip(label[:, [1, 3]], a_min=0., a_max=1.)
-        label[:, [2, 4]] = np.clip(label[:, [2, 4]], a_min=0., a_max=1.)
+        label[:, 1:] = np.clip(label[:, 1:], a_min=0., a_max=1.)
         return label
     
     def __getitem__(self, idx):
