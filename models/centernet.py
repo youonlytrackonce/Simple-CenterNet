@@ -237,8 +237,8 @@ def focal_loss(pred, target, alpha=2., beta=4.):
     #positive_loss
     loss = bce_loss_function(pred, target)
 
-    positive_loss_modulator = (1. - torch.sigmoid(pred[positive_mask])) ** alpha
-    negative_loss_modulator = ((1. - target[negative_mask]) ** beta) * (torch.sigmoid(pred[negative_mask]) ** alpha)
+    positive_loss_modulator = (1. - torch.sigmoid(pred[positive_mask]).detach()) ** alpha
+    negative_loss_modulator = ((1. - target[negative_mask]) ** beta) * (torch.sigmoid(pred[negative_mask]).detach() ** alpha)
     
     modulated_positive_loss = torch.sum(positive_loss_modulator * loss[positive_mask])
     modulated_negative_loss = torch.sum(negative_loss_modulator * loss[negative_mask])
