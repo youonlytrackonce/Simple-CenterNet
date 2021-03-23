@@ -228,17 +228,20 @@ def scatter_gaussian_kernel(heatmap, bbox_icx, bbox_icy, bbox_w, bbox_h, alpha=0
     return heatmap
 
 #Read Training-Time-Friendly Network for Real-Time Object Detection paper for more details
-def focal_loss(pred, target, alpha=2., beta=4.):
+def focal_loss(pred, gaussian_kernel, alpha=2., beta=4.):
     bce_loss_function = nn.BCEWithLogitsLoss(reduction='none')
     
-    positive_mask = target == 1.
-    negative_mask = target != 1.
+    positive_mask = gaussian_kernel == 1.
+    negative_mask = ~positive_mask
+    
+    target = torch.zeros_like(gaussian_kernel)
+    target[positive_mask] = 1.
     
     #positive_loss
     loss = bce_loss_function(pred, target)
 
     positive_loss_modulator = (1. - torch.sigmoid(pred[positive_mask]).detach()) ** alpha
-    negative_loss_modulator = ((1. - target[negative_mask]) ** beta) * (torch.sigmoid(pred[negative_mask]).detach() ** alpha)
+    negative_loss_modulator = ((1. - gaussian_kernel[negative_mask]) ** beta) * (torch.sigmoid(pred[negative_mask]).detach() ** alpha)
     
     modulated_positive_loss = torch.sum(positive_loss_modulator * loss[positive_mask])
     modulated_negative_loss = torch.sum(negative_loss_modulator * loss[negative_mask])
