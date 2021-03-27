@@ -164,13 +164,13 @@ class CenterNet(nn.Module):
         loss_offset_xy_function = nn.L1Loss(reduction='sum')
         loss_wh_function = nn.L1Loss(reduction='sum')
         
-        loss_offset_x = torch.tensor(0., dtype=torch.float32, device=device)
-        loss_offset_y = torch.tensor(0., dtype=torch.float32, device=device)
-        loss_w = torch.tensor(0., dtype=torch.float32, device=device)
-        loss_h = torch.tensor(0., dtype=torch.float32, device=device)
-        loss_class_heatmap = torch.tensor(0., dtype=torch.float32, device=device)
+        batch_loss_offset_x = torch.tensor(0., dtype=torch.float32, device=device)
+        batch_loss_offset_y = torch.tensor(0., dtype=torch.float32, device=device)
+        batch_loss_w = torch.tensor(0., dtype=torch.float32, device=device)
+        batch_loss_h = torch.tensor(0., dtype=torch.float32, device=device)
+        batch_loss_class_heatmap = torch.tensor(0., dtype=torch.float32, device=device)
         
-        num_positive_samples = 0
+        
         for idx in range(batch_size):
             pred = batch_pred[idx]
             
@@ -182,6 +182,13 @@ class CenterNet(nn.Module):
             
             pred_class_heatmap = pred[4:]
             target_class_heatmap = torch.zeros_like(pred_class_heatmap)
+
+            num_positive_samples = 0
+            
+            loss_offset_x = torch.tensor(0., dtype=torch.float32, device=device)
+            loss_offset_y = torch.tensor(0., dtype=torch.float32, device=device)
+            loss_w = torch.tensor(0., dtype=torch.float32, device=device)
+            loss_h = torch.tensor(0., dtype=torch.float32, device=device)
 
             for bbox in label:
                 bbox_class = int(bbox[0])
@@ -195,17 +202,23 @@ class CenterNet(nn.Module):
                 loss_offset_y += loss_offset_xy_function(pred[1, bbox_icy, bbox_icx], bbox_fcy-torch.floor(bbox_fcy))
                 loss_w += loss_wh_function(pred[2, bbox_icy, bbox_icx], bbox_w)
                 loss_h += loss_wh_function(pred[3, bbox_icy, bbox_icx], bbox_h)
-                              
-                target_class_heatmap[bbox_class] = scatter_gaussian_kernel(target_class_heatmap[bbox_class], bbox_icx, bbox_icy, bbox_w.item(), bbox_h.item())
                 
-            loss_class_heatmap += focal_loss(pred_class_heatmap, target_class_heatmap)
-        
-        loss_offset_xy = (loss_offset_x + loss_offset_y)/num_positive_samples
-        loss_wh = 0.1 * (loss_w + loss_h)/num_positive_samples
-        loss_class_heatmap = loss_class_heatmap/num_positive_samples
-        
-        loss = loss_offset_xy + loss_wh + loss_class_heatmap
-        return loss, [loss_offset_xy, loss_wh, loss_class_heatmap]
+                target_class_heatmap[bbox_class] = scatter_gaussian_kernel(target_class_heatmap[bbox_class], bbox_icx, bbox_icy, bbox_w.item(), bbox_h.item())
+            
+            loss_class_heatmap = focal_loss(pred_class_heatmap, target_class_heatmap)
+
+            num_positive_samples = max(1, num_positive_samples)
+            batch_loss_offset_x += (loss_offset_x/num_positive_samples)
+            batch_loss_offset_y += (loss_offset_y/num_positive_samples)
+            batch_loss_w += (loss_w/num_positive_samples)
+            batch_loss_h += (loss_h/num_positive_samples)
+            batch_loss_class_heatmap += (loss_class_heatmap/num_positive_samples)
+             
+        batch_loss_offset_xy = (batch_loss_offset_x + batch_loss_offset_y)/batch_size
+        batch_loss_wh = 0.1 * (batch_loss_w + batch_loss_h)/batch_size
+        batch_loss_class_heatmap = batch_loss_class_heatmap/batch_size
+        loss = batch_loss_offset_xy + batch_loss_wh + batch_loss_class_heatmap
+        return loss, [batch_loss_offset_xy, batch_loss_wh, batch_loss_class_heatmap]
 
 # Gaussan Kernels for Training Class Heatmap, read Training-Time-Friendly Network for Real-Time Object Detection paper for more details
 def scatter_gaussian_kernel(heatmap, bbox_icx, bbox_icy, bbox_w, bbox_h, alpha=0.54):
@@ -228,27 +241,18 @@ def scatter_gaussian_kernel(heatmap, bbox_icx, bbox_icy, bbox_w, bbox_h, alpha=0
     return heatmap
 
 #Read Training-Time-Friendly Network for Real-Time Object Detection paper for more details
-def focal_loss(pred, gaussian_kernel, alpha=2., beta=4.):
-    bce_loss_function = nn.BCEWithLogitsLoss(reduction='none')
+def focal_loss(pred, gaussian_kernel, alpha=2., beta=4., eps=1e-4):
+    pred = torch.sigmoid(pred).clamp(eps, 1.-eps)
     
     positive_mask = gaussian_kernel == 1.
     negative_mask = ~positive_mask
-    
-    target = torch.zeros_like(gaussian_kernel)
-    target[positive_mask] = 1.
-    
-    #positive_loss
-    loss = bce_loss_function(pred, target)
 
-    positive_loss_modulator = (1. - torch.sigmoid(pred[positive_mask]).detach()) ** alpha
-    negative_loss_modulator = ((1. - gaussian_kernel[negative_mask]) ** beta) * (torch.sigmoid(pred[negative_mask]).detach() ** alpha)
-    
-    modulated_positive_loss = torch.sum(positive_loss_modulator * loss[positive_mask])
-    modulated_negative_loss = torch.sum(negative_loss_modulator * loss[negative_mask])
+    positive_loss = torch.sum(-(((1. - pred) ** alpha) * torch.log(pred)) * positive_mask.float())
+    negative_loss = torch.sum(-(((1. - gaussian_kernel) ** beta) * (pred ** alpha) * torch.log(1.-pred)) * negative_mask.float())
     
     if torch.count_nonzero(positive_mask) == 0:
-        return modulated_negative_loss
+        return negative_loss
     elif torch.count_nonzero(negative_mask) == 0:
-        return modulated_positive_loss
+        return positive_loss
     else:
-        return modulated_positive_loss + modulated_negative_loss
+        return negative_loss + positive_loss
