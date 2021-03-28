@@ -214,8 +214,8 @@ class CenterNet(nn.Module):
             batch_loss_h += (loss_h/num_positive_samples)
             batch_loss_class_heatmap += (loss_class_heatmap/num_positive_samples)
              
-        batch_loss_offset_xy = (batch_loss_offset_x + batch_loss_offset_y)/batch_size
-        batch_loss_wh = 0.1 * (batch_loss_w + batch_loss_h)/batch_size
+        batch_loss_offset_xy = (batch_loss_offset_x + batch_loss_offset_y)/2./batch_size
+        batch_loss_wh = 0.1 * (batch_loss_w + batch_loss_h)/2./batch_size
         batch_loss_class_heatmap = batch_loss_class_heatmap/batch_size
         loss = batch_loss_offset_xy + batch_loss_wh + batch_loss_class_heatmap
         return loss, [batch_loss_offset_xy, batch_loss_wh, batch_loss_class_heatmap]
