@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument('--img-w', default=512, type=int)
     parser.add_argument('--img-h', default=512, type=int)
 
-    parser.add_argument('--lr', default=1e-3, type=float, help='initial learning rate')
+    parser.add_argument('--lr', default=5e-4, type=float, help='initial learning rate')
     parser.add_argument('--weights', type=str, default="", help='load weights to resume training')
     parser.add_argument('--total-epoch', type=int, default=150, help='total_epoch')
     parser.add_argument('--root', default="./dataset/VOCDevkit", help='Location of dataset directory')
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     model = centernet.CenterNet(pretrained_backbone=True)
     model = model.to(device=device)
     
-    training_set = dataset.DetectionDataset(root="./dataset/VOCDevkit",
+    training_set = dataset.DetectionDataset(root="C:/dataset/VOCDevkit",
                                             dataset_name="voc", 
                                             set="train",
                                             img_w=opt.img_w, img_h=opt.img_h,
@@ -52,11 +52,7 @@ if __name__ == "__main__":
                                                       pin_memory=True,
                                                       drop_last=True)
     
-    optimizer = torch.optim.SGD(model.parameters(), 
-                                lr=opt.lr, 
-                                momentum=opt.momentum,
-                                weight_decay=opt.weight_decay
-                                )
+    optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
     
     
     iterations_per_epoch = num_training_set_imgs // opt.batch_size 
