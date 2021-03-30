@@ -9,12 +9,12 @@ import torch.nn as nn
 
 
 class Conv(nn.Module):
-    def __init__(self, c1, c2, k, s=1, p=0, d=1, g=1, leaky=True):
+    def __init__(self, c1, c2, k, s=1, p=0, d=1, g=1):
         super(Conv, self).__init__()
         self.convs = nn.Sequential(
-            nn.Conv2d(c1, c2, k, stride=s, padding=p, dilation=d, groups=g),
+            nn.Conv2d(c1, c2, k, stride=s, padding=p, dilation=d, groups=g, bias=False),
             nn.BatchNorm2d(c2),
-            nn.LeakyReLU(0.1, inplace=True) if leaky else nn.Identity()
+            nn.ReLU(inplace=True)
         )
 
     def forward(self, x):
@@ -22,7 +22,7 @@ class Conv(nn.Module):
     
     
 class DeConv(nn.Module):
-    def __init__(self, in_channels, out_channels, ksize, stride=2, leaky=False):
+    def __init__(self, in_channels, out_channels, ksize, stride=2):
         super(DeConv, self).__init__()
         # deconv basic config
         if ksize == 4:
@@ -34,15 +34,17 @@ class DeConv(nn.Module):
         elif ksize == 2:
             padding = 0
             output_padding = 0
-
-        self.convs = nn.Sequential(
-            nn.ConvTranspose2d(in_channels, out_channels, ksize, stride=stride, padding=padding, output_padding=output_padding),
-            nn.BatchNorm2d(out_channels),
-            nn.LeakyReLU(0.1, inplace=True) if leaky else nn.ReLU(inplace=True)
-        )
+        
+        self.conv = nn.Conv2d(in_channels, out_channels, 3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        
+        self.up = nn.ConvTranspose2d(out_channels, out_channels, ksize, stride=stride, padding=padding, output_padding=output_padding, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
 
     def forward(self, x):
-        return self.convs(x)
+        x = torch.relu(self.bn1(self.conv(x)))
+        x = torch.relu(self.bn2(self.up(x)))
+        return x
     
 class CenterNet(nn.Module):
     def __init__(self, 
@@ -59,7 +61,8 @@ class CenterNet(nn.Module):
         self.deconv3 = DeConv(128, 64, ksize=4, stride=2) #  8 -> 4
 
         self.cls_pred = nn.Sequential(
-            Conv(64, 64, k=3, p=1),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
             nn.Conv2d(64, self.num_classes, kernel_size=1)
         )
         
@@ -67,12 +70,14 @@ class CenterNet(nn.Module):
         nn.init.constant_(self.cls_pred[-1].bias, -torch.log(torch.tensor((1.-init_prob)/init_prob)))
              
         self.txty_pred = nn.Sequential(
-            Conv(64, 64, k=3, p=1),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
             nn.Conv2d(64, 2, kernel_size=1)
         )
        
         self.twth_pred = nn.Sequential(
-            Conv(64, 64, k=3, p=1),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
             nn.Conv2d(64, 2, kernel_size=1)
         )
         
@@ -92,6 +97,7 @@ class CenterNet(nn.Module):
         cls_pred = self.cls_pred(x)
         txty_pred = self.txty_pred(x)
         twth_pred = self.twth_pred(x)
+        
         
         out = torch.cat([txty_pred, twth_pred, cls_pred], dim=1) #batch_pred in compute_loss()
         
