@@ -62,7 +62,7 @@ class CenterNet(nn.Module):
 
         self.cls_pred = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Conv2d(64, self.num_classes, kernel_size=1)
         )
         
@@ -71,13 +71,13 @@ class CenterNet(nn.Module):
              
         self.txty_pred = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Conv2d(64, 2, kernel_size=1)
         )
        
         self.twth_pred = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Conv2d(64, 2, kernel_size=1)
         )
         
