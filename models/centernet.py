@@ -2,6 +2,7 @@ from .resnet import *
 from utils import tool
 
 import numpy as np
+import math
 import torch
 from torch import Tensor
 from typing import Type, Any, Callable, Union, List, Optional
@@ -19,8 +20,18 @@ class Conv(nn.Module):
 
     def forward(self, x):
         return self.convs(x)
-    
-    
+
+
+def fill_up_weights(up):
+    w = up.weight.data
+    f = math.ceil(w.size(2) / 2)
+    c = (2 * f - 1 - f % 2) / (2. * f)
+    for i in range(w.size(2)):
+        for j in range(w.size(3)):
+            w[:, 0, i, j] = \
+                (1 - math.fabs(i / f - c)) * (1 - math.fabs(j / f - c))
+        
+        
 class DeConv(nn.Module):
     def __init__(self, in_channels, out_channels, ksize, stride=2):
         super(DeConv, self).__init__()
@@ -40,6 +51,7 @@ class DeConv(nn.Module):
         
         self.up = nn.ConvTranspose2d(out_channels, out_channels, ksize, stride=stride, padding=padding, output_padding=output_padding, bias=False)
         self.bn2 = nn.BatchNorm2d(out_channels)
+        fill_up_weights(self.up)
 
     def forward(self, x):
         x = torch.relu(self.bn1(self.conv(x)))
@@ -62,7 +74,7 @@ class CenterNet(nn.Module):
 
         self.cls_pred = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Conv2d(64, self.num_classes, kernel_size=1)
         )
         
@@ -71,13 +83,13 @@ class CenterNet(nn.Module):
              
         self.txty_pred = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Conv2d(64, 2, kernel_size=1)
         )
        
         self.twth_pred = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
+            nn.ReLU(inplace=True),
             nn.Conv2d(64, 2, kernel_size=1)
         )
         
@@ -97,7 +109,6 @@ class CenterNet(nn.Module):
         cls_pred = self.cls_pred(x)
         txty_pred = self.txty_pred(x)
         twth_pred = self.twth_pred(x)
-        
         
         out = torch.cat([txty_pred, twth_pred, cls_pred], dim=1) #batch_pred in compute_loss()
         
