@@ -1,4 +1,5 @@
 from .resnet import *
+from .dcn import *
 from utils import tool
 
 import numpy as np
@@ -46,7 +47,7 @@ class DeConv(nn.Module):
             padding = 0
             output_padding = 0
         
-        self.conv = nn.Conv2d(in_channels, out_channels, 3, stride=1, padding=1, bias=False)
+        self.conv = DeformableConv2d(in_channels, out_channels)
         self.bn1 = nn.BatchNorm2d(out_channels)
         
         self.up = nn.ConvTranspose2d(out_channels, out_channels, ksize, stride=stride, padding=padding, output_padding=output_padding, bias=False)
