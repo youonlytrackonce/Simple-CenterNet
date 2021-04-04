@@ -42,9 +42,9 @@ class DeformableConv2d(nn.Module):
     
     def forward(self, x):
         h, w = x.shape[2:]
-        max_length = max(h, w)/2.
+        max_offset = max(h, w)/2.
         
-        offset = self.offset_conv(x).clamp(-max_length, max_length)
+        offset = self.offset_conv(x).clamp(-max_offset, max_offset)
         modulator = 2. * torch.sigmoid(self.modulator_conv(x))
 
         x = torchvision.ops.deform_conv2d(input=x, 
