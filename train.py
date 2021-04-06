@@ -16,12 +16,10 @@ if __name__ == "__main__":
     parser.add_argument('--img-w', default=512, type=int)
     parser.add_argument('--img-h', default=512, type=int)
 
-    parser.add_argument('--lr', default=5e-4, type=float, help='initial learning rate')
+    parser.add_argument('--lr', default=1.25e-4, type=float, help='initial learning rate')
     parser.add_argument('--weights', type=str, default="", help='load weights to resume training')
     parser.add_argument('--total-epoch', type=int, default=150, help='total_epoch')
     parser.add_argument('--root', default="./dataset/VOCDevkit", help='Location of dataset directory')
-    parser.add_argument('--momentum', default=0.9, type=float, help='Momentum value for optim')
-    parser.add_argument('--weight-decay', default=5e-4, type=float, help='Weight decay for SGD')
     parser.add_argument('--num-workers', default=8, type=int, help='Number of workers used in dataloading')
     parser.add_argument('--save-folder', default='./weights', type=str, help='where you save weights')
     parser.add_argument('--seed', default=7777, type=int)
@@ -53,6 +51,31 @@ if __name__ == "__main__":
                                                       drop_last=True)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
+    
+    
+    #     from models import dcn
+
+    # params = []
+    # deformable_conv_params = []
+    
+    # for m in model.children():
+    #     if isinstance(m, dcn.DeformableConv2d):
+    #         for p in m.offset_conv.parameters():
+    #             deformable_conv_params.append(p)
+                
+    #         for p in m.modulator_conv.parameters():
+    #             deformable_conv_params.append(p)
+                
+    #         for p in m.regular_conv.parameters():
+    #             params.append(p)
+    #     else:
+    #         for p in m.parameters():
+    #             params.append(p)
+
+    # optimizer = torch.optim.Adam([{"params": params, "lr": opt.lr},
+    #                               {"params": deformable_conv_params, "lr": opt.lr * 0.1},
+    #                               ])
+    
     
     
     iterations_per_epoch = num_training_set_imgs // opt.batch_size 
