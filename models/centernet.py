@@ -10,19 +10,6 @@ from typing import Type, Any, Callable, Union, List, Optional
 import torch.nn as nn
 
 
-class Conv(nn.Module):
-    def __init__(self, c1, c2, k, s=1, p=0, d=1, g=1):
-        super(Conv, self).__init__()
-        self.convs = nn.Sequential(
-            nn.Conv2d(c1, c2, k, stride=s, padding=p, dilation=d, groups=g, bias=False),
-            nn.BatchNorm2d(c2),
-            nn.ReLU(inplace=True)
-        )
-
-    def forward(self, x):
-        return self.convs(x)
-
-
 def fill_up_weights(up):
     w = up.weight.data
     f = math.ceil(w.size(2) / 2)
@@ -31,8 +18,7 @@ def fill_up_weights(up):
         for j in range(w.size(3)):
             w[:, 0, i, j] = \
                 (1 - math.fabs(i / f - c)) * (1 - math.fabs(j / f - c))
-        
-        
+    
 class DeConv(nn.Module):
     def __init__(self, in_channels, out_channels, ksize, stride=2):
         super(DeConv, self).__init__()
@@ -176,7 +162,7 @@ class CenterNet(nn.Module):
             return filtered_batch_bboxes
    
     def compute_loss(self, batch_pred, batch_label):
-        batch_size, _, heatmap_height, heatmap_width = batch_pred.shape
+        batch_size, _, heatmap_h, heatmap_w = batch_pred.shape
         device = batch_pred.device
         
         loss_offset_xy_function = nn.L1Loss(reduction='sum')
@@ -195,8 +181,8 @@ class CenterNet(nn.Module):
             label = batch_label[idx].to(device)
             label[:, 1] = torch.clamp(label[:, 1], min=0., max=1.)
 
-            label[:, [1, 3]] *= heatmap_width
-            label[:, [2, 4]] *= heatmap_height
+            label[:, [1, 3]] *= heatmap_w
+            label[:, [2, 4]] *= heatmap_h
             
             pred_class_heatmap = pred[4:]
             target_class_heatmap = torch.zeros_like(pred_class_heatmap)
