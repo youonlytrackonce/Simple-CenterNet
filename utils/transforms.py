@@ -20,19 +20,19 @@ def xyxy2cxcywh(bboxes_xyxy: np.ndarray):
 
 def aspect_ratio_preserved_resize(img, dsize, bboxes_cxcywh=None):
     org_img_h, org_img_w = img.shape[:2]
-    target_width, target_height = dsize
+    target_w, target_h = dsize
 
-    ratio = min(target_width / org_img_w, target_height / org_img_h)
+    ratio = min(target_w / org_img_w, target_h / org_img_h)
     
-    non_padded_resized_height = round(org_img_h * ratio)
-    non_padded_resized_width = round(org_img_w * ratio)
+    non_padded_resized_h = round(org_img_h * ratio)
+    non_padded_resized_w = round(org_img_w * ratio)
 
-    img = cv2.resize(img, dsize=(non_padded_resized_width, non_padded_resized_height))
+    img = cv2.resize(img, dsize=(non_padded_resized_w, non_padded_resized_h))
 
-    pad_left = (target_width - non_padded_resized_width) // 2
-    pad_right = target_width - non_padded_resized_width - pad_left
-    pad_top = (target_height - non_padded_resized_height) // 2
-    pad_bottom = target_height - non_padded_resized_height - pad_top
+    pad_left = (target_w - non_padded_resized_w) // 2
+    pad_right = target_w - non_padded_resized_w - pad_left
+    pad_top = (target_h - non_padded_resized_h) // 2
+    pad_bottom = target_h - non_padded_resized_h - pad_top
 
     # padding
     img = cv2.copyMakeBorder(img,
@@ -43,18 +43,18 @@ def aspect_ratio_preserved_resize(img, dsize, bboxes_cxcywh=None):
                              cv2.BORDER_CONSTANT,
                              value=(127, 127, 127))
     
-    assert img.shape[0] == target_height and img.shape[1] == target_width
+    assert img.shape[0] == target_h and img.shape[1] == target_w
     
     if bboxes_cxcywh is not None:
         # padding으로 인한 객체 translation 보상
-        bboxes_cxcywh[:, [0, 2]] *= non_padded_resized_width
-        bboxes_cxcywh[:, [1, 3]] *= non_padded_resized_height
+        bboxes_cxcywh[:, [0, 2]] *= non_padded_resized_w
+        bboxes_cxcywh[:, [1, 3]] *= non_padded_resized_h
 
         bboxes_cxcywh[:, 0] += pad_left
         bboxes_cxcywh[:, 1] += pad_top
 
-        bboxes_cxcywh[:, [0, 2]] /= target_width
-        bboxes_cxcywh[:, [1, 3]] /= target_height
+        bboxes_cxcywh[:, [0, 2]] /= target_w
+        bboxes_cxcywh[:, [1, 3]] /= target_h
 
         return img, bboxes_cxcywh, [org_img_w, org_img_h], [pad_left, pad_top, pad_right, pad_bottom]
     return img
