@@ -38,7 +38,8 @@ if __name__ == "__main__":
                                             dataset_name="voc", 
                                             set="train",
                                             img_w=opt.img_w, img_h=opt.img_h,
-                                            use_augmentation=True)
+                                            use_augmentation=True,
+                                            keep_ratio=True)
     
     num_training_set_imgs = len(training_set)
     
