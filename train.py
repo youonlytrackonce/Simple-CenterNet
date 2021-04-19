@@ -52,7 +52,8 @@ if __name__ == "__main__":
                                                       drop_last=True)
     
     optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
-    
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = 0.
     
     #     from models import dcn
 
@@ -78,11 +79,11 @@ if __name__ == "__main__":
     #                               ])
     
     
-    
     iterations_per_epoch = num_training_set_imgs // opt.batch_size 
     total_iteration = iterations_per_epoch * opt.total_epoch
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_iteration)
+    warmup_iteration = 1000
     
     writer = SummaryWriter()
     
@@ -99,7 +100,7 @@ if __name__ == "__main__":
     for epoch in range(start_epoch, opt.total_epoch):
         model.train()
         for i, batch_data in enumerate(training_set_loader):
-            n_iter = (iterations_per_epoch * epoch) + i
+            n_iteration = (iterations_per_epoch * epoch) + i
             
             batch_img = batch_data["img"].to(device)
             batch_label = batch_data["label"]
@@ -108,18 +109,23 @@ if __name__ == "__main__":
             batch_output = model(batch_img)
             loss, losses = model.compute_loss(batch_output, batch_label)
             
-            writer.add_scalar('train/loss_offset_xy', losses[0].item(), n_iter)
-            writer.add_scalar('train/loss_wh', losses[1].item(), n_iter)
-            writer.add_scalar('train/loss_class_heatmap', losses[2].item(), n_iter)
-            writer.add_scalar('train/loss', loss.item(), n_iter)
-            writer.add_scalar('train/lr', tool.get_lr(optimizer), n_iter)
+            writer.add_scalar('train/loss_offset_xy', losses[0].item(), n_iteration)
+            writer.add_scalar('train/loss_wh', losses[1].item(), n_iteration)
+            writer.add_scalar('train/loss_class_heatmap', losses[2].item(), n_iteration)
+            writer.add_scalar('train/loss', loss.item(), n_iteration)
+            writer.add_scalar('train/lr', tool.get_lr(optimizer), n_iteration)
 
             #backword
             loss.backward()
             optimizer.step()
             optimizer.zero_grad()
             
-            scheduler.step()
+            if n_iteration > warmup_iteration:
+                scheduler.step()
+            else:
+                lr = opt.lr * float(n_iteration) / warmup_iteration
+                for param_group in optimizer.param_groups:
+                    param_group['lr'] = lr
         
         checkpoint = {
         'epoch': epoch,# zero indexing
