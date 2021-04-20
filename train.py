@@ -51,7 +51,8 @@ if __name__ == "__main__":
                                                       pin_memory=True,
                                                       drop_last=True)
     
-    optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr)
+    initial_lr = 5e-4 * (opt.batch_size/128.)
+    optimizer = torch.optim.Adam(model.parameters(), lr=initial_lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = 0.
     
@@ -123,7 +124,7 @@ if __name__ == "__main__":
             if n_iteration > warmup_iteration:
                 scheduler.step()
             else:
-                lr = opt.lr * float(n_iteration) / warmup_iteration
+                lr = initial_lr * float(n_iteration) / warmup_iteration
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr
         
