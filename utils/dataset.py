@@ -1,3 +1,4 @@
+from numpy.lib.function_base import diff
 from . import voc0712
 from . import transforms
 
@@ -25,7 +26,11 @@ class DetectionDataset(Dataset):  # for training/testing
                 image_sets=[("2007", "trainval"), ("2012", "trainval")]
             elif set == "test":
                 image_sets=[("2007", "test")]
-            self.dataset = voc0712.VOCDetection(root, image_sets, keep_difficult=False)
+                
+            keep_difficult=False
+            self.dataset = voc0712.VOCDetection(root, 
+                                                image_sets, 
+                                                keep_difficult=keep_difficult)
         elif dataset_name == "coco":
             pass
         elif dataset_name == "custom":
@@ -44,6 +49,9 @@ class DetectionDataset(Dataset):  # for training/testing
         bboxes_class = label[:, 0].reshape(-1, 1)
         bboxes_cxcywh = label[:, 1:].reshape(-1, 4)
         
+        difficult = label[:, 0] < 0
+        bboxes_class[difficult] = -bboxes_class[difficult] + 1
+        
         #resize image
         if self.keep_ratio:
             img, bboxes_cxcywh, org_img_shape, padded_ltrb  = transforms.aspect_ratio_preserved_resize(img,
@@ -54,9 +62,11 @@ class DetectionDataset(Dataset):  # for training/testing
         
         #augmentation
         if self.use_augmentation:
+            img, bboxes_cxcywh, bboxes_class = transforms.mosaic(img, bboxes_cxcywh, bboxes_class, self.dataset, self.keep_ratio)
             img, bboxes_cxcywh = transforms.horizontal_flip(img, bboxes_cxcywh, p=0.5)
             img, bboxes_cxcywh = transforms.random_translation(img, bboxes_cxcywh, p=1.0)
             img, bboxes_cxcywh = transforms.random_scale(img, bboxes_cxcywh, p=1.0)
+            img = transforms.augment_hsv(img)
 
         #numpy(=opencv)img 2 pytorch tensor        
         img = img[..., ::-1].transpose(2, 0, 1)
@@ -65,6 +75,8 @@ class DetectionDataset(Dataset):  # for training/testing
         
         label = np.concatenate([bboxes_class, bboxes_cxcywh], axis=1)
         label = torch.tensor(label, dtype=torch.float32)
+        
+        difficult = torch.tensor(difficult, dtype=torch.bool)
         
         data = {}
         data["img"] = img

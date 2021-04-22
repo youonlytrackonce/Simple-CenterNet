@@ -94,7 +94,7 @@ def measure_tpfp(pred_bboxes, gt_bboxes, iou_threshold=0.5, bbox_format='cxcywh'
 
         filtered_iou_per_box = iou_per_box[pred_mask]
         filtered_tp_per_box = tp_per_box[pred_mask]
-
+        
         iou_matrix = compute_iou(filtered_pred_bboxes[:, 1:5], filtered_gt_bboxes[:, 1:5], bbox_format) # (N, M)
         #for iou in iou_matrix:
         #print("np.sum(iou_matrix): ", np.sum(iou_matrix))
@@ -105,19 +105,33 @@ def measure_tpfp(pred_bboxes, gt_bboxes, iou_threshold=0.5, bbox_format='cxcywh'
 
         for i in range(len(filtered_gt_bboxes)):
             iou = iou_matrix[:, i] # filtered_pred_bboxes와 i번째 filtered_gt_bbox간 IoU
-            sorted_iou_inds = np.argsort(iou)[::-1]
-
-            if iou[sorted_iou_inds[0]] < iou_threshold:
-                continue
-            
-            filtered_iou_per_box[sorted_iou_inds[0]] = iou[sorted_iou_inds[0]]
-            filtered_tp_per_box[sorted_iou_inds[0]] = 1
-
+            matched = False
+            for j in range(len(iou)):
+                if filtered_tp_per_box[j] == 1.: # already matched
+                    continue
+                
+                if iou[j] >= iou_threshold:
+                    if not matched:
+                        matched = True
+                        filtered_iou_per_box[j] = iou[j]
+                        filtered_tp_per_box[j] = 1.
+        
         iou_per_box[pred_mask] = filtered_iou_per_box
         tp_per_box[pred_mask] = filtered_tp_per_box
 
-    assert np.sum(tp_per_box) <= len(gt_bboxes), "Your code is wrong. The number of TP cases cannot exceed the number of ground truth boxes."
     fp_per_box = 1 - tp_per_box
+    
+    # print(pred_bboxes.shape)
+    # print(np.sum(tp_per_box) + np.sum(fp_per_box))
+    
+    
+    assert np.sum(tp_per_box) <= len(gt_bboxes), "Your code is wrong. The number of TP cases cannot exceed the number of ground truth boxes."
+    assert np.sum(tp_per_box) + np.sum(fp_per_box) <= len(pred_bboxes), "Your code is wrong"
+
+    # print(gt_bboxes)
+    # print(fp_per_box)
+    # print("--------------------")
+    # exit()
     class_tp_fp_score = np.concatenate((pred_bboxes[:, 0, None], 
                                         tp_per_box, 
                                         fp_per_box, 
@@ -129,9 +143,81 @@ def measure_tpfp(pred_bboxes, gt_bboxes, iou_threshold=0.5, bbox_format='cxcywh'
     class_tp_fp_score = class_tp_fp_score[sorted_inds_by_score]
     return class_tp_fp_score
 
+# def measure_tpfp(pred_bboxes, gt_bboxes, difficult, iou_threshold=0.5, bbox_format='cxcywh'):
+#     '''
+#     https://github.com/rafaelpadilla/Object-Detection-Metrics
+#     위 프로젝트의 https://github.com/rafaelpadilla/Object-Detection-Metrics/blob/master/pascalvoc.py
+#     코드 및 voc 평가방법 참고
+    
+#     pred_bboxes: shape:[num_pred_bboxes, 6], class, x, y, w, h, confidence score 
+#     gt_bboxes: shape:[num_gt_bboxes, 5], class, x, y, w, h
+#     iou_threshold: 예측된 바운딩 박스를 tp/fp로 분류하기위한 iou thereshold
+    
+#     return class_tp_fp_score
+#     class_tp_fp_score: shape:[num_pred_bboxes, 4], class, tp, fp, confidence score
+#     예측된 바운딩 박스별로 class tp/fp, confidence score 값을 기록한 table을 return 함
+#     '''
+    
+#     pred_bboxes = pred_bboxes[np.argsort(pred_bboxes[:, 5])[::-1]]
+# #   print(pred_bboxes)
+# #   exit()
+  
+#     iou_per_box = np.zeros((len(pred_bboxes), 1))
+#     tp_per_box = np.zeros((len(pred_bboxes), 1))
+
+#     for c in np.unique(gt_bboxes[:, 0]):
+
+#         gt_mask = gt_bboxes[:, 0] == c
+#         pred_mask = pred_bboxes[:, 0] == c
+
+#         filtered_gt_bboxes = gt_bboxes[gt_mask] # (M, )
+#         filtered_pred_bboxes = pred_bboxes[pred_mask] # (N, )
+
+#         if len(filtered_gt_bboxes) == 0 or len(filtered_pred_bboxes) == 0:
+#             continue
+
+#         filtered_iou_per_box = iou_per_box[pred_mask]
+#         filtered_tp_per_box = tp_per_box[pred_mask]
+
+#         iou_matrix = compute_iou(filtered_pred_bboxes[:, 1:5], filtered_gt_bboxes[:, 1:5], bbox_format) # (N, M)
+#         #for iou in iou_matrix:
+#         #print("np.sum(iou_matrix): ", np.sum(iou_matrix))
+
+#         # TP 여부를 판단할때, 어떤 한 Predicted Box가 두 Ground Truth Box에 대한 검출 결과로 중복적으로 매칭될 수 있다.
+#         # 이 경우 다른 Predicted Box가 두 Ground Truth Box중 하나의 Box에 대한 검출 결과로 매칭되고 TP가 될 가능성이 생긴다. 
+#         # 다만 VOC 는 이런 경우를 신경쓰지않음...
+
+#         for i in range(len(filtered_gt_bboxes)):
+#             iou = iou_matrix[:, i] # filtered_pred_bboxes와 i번째 filtered_gt_bbox간 IoU
+#             sorted_iou_inds = np.argsort(iou)[::-1]
+
+#             if iou[sorted_iou_inds[0]] < iou_threshold:
+#                 continue
+            
+#             filtered_iou_per_box[sorted_iou_inds[0]] = iou[sorted_iou_inds[0]]
+#             filtered_tp_per_box[sorted_iou_inds[0]] = 1
+
+#         iou_per_box[pred_mask] = filtered_iou_per_box
+#         tp_per_box[pred_mask] = filtered_tp_per_box
+
+#     assert np.sum(tp_per_box) <= len(gt_bboxes), "Your code is wrong. The number of TP cases cannot exceed the number of ground truth boxes."
+#     fp_per_box = 1 - tp_per_box
+#     class_tp_fp_score = np.concatenate((pred_bboxes[:, 0, None], 
+#                                         tp_per_box, 
+#                                         fp_per_box, 
+#                                         pred_bboxes[:, 5, None]), 
+#                                     axis=1)#(N, 3)
+
+#     sorted_inds_by_score = np.argsort(pred_bboxes[:, 5])[::-1]#내림차순  
+
+#     class_tp_fp_score = class_tp_fp_score[sorted_inds_by_score]
+#     return class_tp_fp_score
+
 def compute_ap(tp_fp_score, gt_bboxes):
     tp_fp_score = tp_fp_score[np.argsort(tp_fp_score[:, -1])[::-1]]
     num_all_gt_bboxes = len(gt_bboxes)
+    
+    # print(num_all_gt_bboxes)
 
     accumulated_tp = np.cumsum(tp_fp_score[:, 0]).reshape(-1, 1)
     accumulated_fp = np.cumsum(tp_fp_score[:, 1]).reshape(-1, 1)
@@ -140,9 +226,11 @@ def compute_ap(tp_fp_score, gt_bboxes):
     recall = accumulated_tp/num_all_gt_bboxes
     
     # print(precision)
-    # import matplotlib.pyplot as plt
-    # plt.plot(recall, precision)
-    # plt.show()
+    # print(recall)
+    # print(precision)
+    import matplotlib.pyplot as plt
+    
+    
     
     #return CalculateAveragePrecision(recall, precision)[:3]
     interpolated_precision = np.zeros_like(precision)
@@ -159,6 +247,9 @@ def compute_ap(tp_fp_score, gt_bboxes):
     for i in range(1, len(recall)):
         ap = ap + interpolated_precision[i] * (recall[i] - recall[i - 1]) 
 
+    # plt.plot(recall, interpolated_precision)
+    # plt.show()
+    
     return ap, precision, recall
 
 def compute_map(class_tp_fp_score, gt_bboxes, num_classes):
@@ -283,13 +374,13 @@ if __name__ == '__main__':
     
     class_tp_fp_score_batch = []
     for pred_bboxes_per_image, gt_bboxes_per_image in zip(pred_bboxes_batch, gt_bboxes_batch):
-        class_tp_fp_score = measure_tpfp(pred_bboxes_per_image, gt_bboxes_per_image, 0.5, bbox_format='tlxtlywh')
+        class_tp_fp_score = measure_tpfp(pred_bboxes_per_image, gt_bboxes_per_image, np.zeros((len(gt_bboxes_per_image))), 0.3, bbox_format='tlxtlywh')
         class_tp_fp_score_batch.append(class_tp_fp_score)
     
-    class_tp_fp_score_batch = np.concatenate(class_tp_fp_score_batch, axis=0)
-    class_tp_fp_score_batch = class_tp_fp_score_batch[np.argsort(class_tp_fp_score_batch[:, 3])[::-1]]
-    gt_bboxes_batch = np.concatenate(gt_bboxes_batch, axis=0)
+   # class_tp_fp_score_batch = np.concatenate(class_tp_fp_score_batch, axis=0)
+   # class_tp_fp_score_batch = class_tp_fp_score_batch[np.argsort(class_tp_fp_score_batch[:, 3])[::-1]]
+   # gt_bboxes_batch = np.concatenate(gt_bboxes_batch, axis=0)
     
-    print(class_tp_fp_score_batch)
+    #print(class_tp_fp_score_batch)
     mean_ap = compute_map(class_tp_fp_score_batch, gt_bboxes_batch, num_classes)
     print(mean_ap)

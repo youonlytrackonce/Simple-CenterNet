@@ -95,7 +95,7 @@ def random_translation(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127)):
         return img, bboxes_cxcywh
     return img, bboxes_cxcywh
     
-def random_scale(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127), lower_bound=0.25, upper_bound=4.0):
+def random_scale(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127), lower_bound=0.25, upper_bound=4.0, bbox_wmin_thr=32, bbox_hmin_thr=32):
     if random.random() < p:
         img_h, img_w = img.shape[0:2]
         
@@ -105,8 +105,8 @@ def random_scale(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127), lower_
         min_bbox_w = np.min(bboxes_cxcywh[:, 2]) * img_w
         min_bbox_h = np.min(bboxes_cxcywh[:, 3]) * img_h
         
-        if min_bbox_w >= 32 and min_bbox_h >= 32:
-            min_scale = max(32/min_bbox_w, 32/min_bbox_h)
+        if min_bbox_w >= bbox_wmin_thr and min_bbox_h >= bbox_hmin_thr:
+            min_scale = max(bbox_wmin_thr/min_bbox_w, bbox_hmin_thr/min_bbox_h)
         else:
             min_scale = 1.
             
@@ -159,6 +159,87 @@ def random_scale(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127), lower_
             bboxes_cxcywh = xyxy2cxcywh(bboxes_xyxy)
             return img, bboxes_cxcywh
     return img, bboxes_cxcywh
+
+def mosaic(img, bboxes_cxcywh, bboxes_class, dataset, keep_ratio=True, bbox_wmin_thr=32, bbox_hmin_thr=32, trial=40, p=0.5):
+    if random.random() <= p:
+        img_h, img_w = img.shape[:2]
+        resized_img_h, resized_img_w = img_h//2, img_w//2
+        
+        bbox_wmin = int(resized_img_w * np.min(bboxes_cxcywh[:, 2]))
+        bbox_hmin = int(resized_img_h * np.min(bboxes_cxcywh[:, 3]))
+        
+        if bbox_wmin < bbox_wmin_thr or bbox_hmin < bbox_hmin_thr:
+            return img, bboxes_cxcywh, bboxes_class
+    
+        mosaic_img = np.zeros_like(img)
+        mosaic_bboxes_cxcywh = []
+        mosaic_bboxes_class = []
+        
+        img = cv2.resize(img, dsize=(resized_img_w, resized_img_h))
+        bboxes_cxcywh /= 2.
+        
+        mosaic_img[:resized_img_h, :resized_img_w] = img
+        mosaic_bboxes_cxcywh.append(bboxes_cxcywh)
+        mosaic_bboxes_class.append(bboxes_class)
+        
+        top_left_x = [resized_img_w, 0, resized_img_w]
+        top_left_y = [0, resized_img_h, resized_img_h]
+        tx = [0.5, 0, 0.5]
+        ty = [0, 0.5, 0.5]
+        
+        i = 0
+        for _ in range(trial):
+            rand_idx = random.randint(0, len(dataset)-1)
+            
+            img, label = dataset[rand_idx]
+            
+            bboxes_class = label[:, 0].reshape(-1, 1)
+            bboxes_cxcywh = label[:, 1:].reshape(-1, 4)
+            
+            if keep_ratio:
+                img, bboxes_cxcywh, _, _ = aspect_ratio_preserved_resize(img, dsize=(resized_img_w, resized_img_h), bboxes_cxcywh=bboxes_cxcywh)
+            else:
+                img = cv2.resize(img, dsize=(resized_img_w, resized_img_h))
+            
+            bbox_wmin = int(resized_img_w * np.min(bboxes_cxcywh[:, 2]))
+            bbox_hmin = int(resized_img_h * np.min(bboxes_cxcywh[:, 3]))
+            
+            if bbox_wmin < bbox_wmin_thr or bbox_hmin < bbox_hmin_thr:
+                continue
+            
+            mosaic_img[top_left_y[i]:top_left_y[i]+resized_img_h, top_left_x[i]:top_left_x[i]+resized_img_w] = img
+            bboxes_cxcywh /= 2.
+  
+            bboxes_cxcywh[:, 0] += tx[i]
+            bboxes_cxcywh[:, 1] += ty[i]
+                        
+            mosaic_bboxes_cxcywh.append(bboxes_cxcywh)
+            mosaic_bboxes_class.append(bboxes_class)
+
+            if i == 2:
+                break
+            
+            i += 1
+
+        mosaic_bboxes_cxcywh = np.concatenate(mosaic_bboxes_cxcywh, axis=0)
+        mosaic_bboxes_class = np.concatenate(mosaic_bboxes_class, axis=0)
+        
+        mosaic_bboxes_cxcywh = np.clip(mosaic_bboxes_cxcywh, 0., 1.)
+        return mosaic_img, mosaic_bboxes_cxcywh, mosaic_bboxes_class
+    return img, bboxes_cxcywh, bboxes_class
+
+def augment_hsv(img, hgain=0.0138, sgain=0.664, vgain=0.464): # https://github.com/ultralytics/yolov5/blob/77415a42e5975ea356393c9f1d5cff0ae8acae2c/data/hyp.finetune.yaml
+    r = np.random.uniform(-1, 1, 3) * [hgain, sgain, vgain] + 1  # random gains
+    hue, sat, val = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
+    dtype = img.dtype  # uint8
+
+    x = np.arange(0, 256, dtype=np.int16)
+    lut_hue = ((x * r[0]) % 180).astype(dtype)
+    lut_sat = np.clip(x * r[1], 0, 255).astype(dtype)
+    lut_val = np.clip(x * r[2], 0, 255).astype(dtype)
+
+    img_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val))).astype(dtype)
+    return cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR)
 
 def draw_bboxes(img, bboxes_cxcywh):
     img_h, img_w = img.shape[:2]

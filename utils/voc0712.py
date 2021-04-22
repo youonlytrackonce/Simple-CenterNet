@@ -78,6 +78,7 @@ class VOCDetection(object):
                 continue
             
             class_index = CLASSES.index(class_name)
+
             
             bbox = obj.find("bndbox")
             

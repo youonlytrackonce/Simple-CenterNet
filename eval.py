@@ -40,6 +40,7 @@ if __name__ == "__main__":
                                         img_w=opt.img_w, 
                                         img_h=opt.img_h,
                                         keep_ratio=True)
+    
     test_set_loader = torch.utils.data.DataLoader(test_set, 
                                                   opt.batch_size,
                                                   num_workers=opt.num_workers,
@@ -51,6 +52,7 @@ if __name__ == "__main__":
     gt_bboxes_batch = []
     class_tp_fp_score_batch = []
     with torch.no_grad():
+
         for batch_data in test_set_loader:
             batch_img = batch_data["img"].to(device)
             batch_label = batch_data["label"]
@@ -63,11 +65,12 @@ if __name__ == "__main__":
             
             for i in range(len(batch_img)):
                 idx = batch_idx[i] # data index
+                
                 org_img_shape = batch_org_img_shape[i] # (w, h)
                 padded_ltrb = batch_padded_ltrb[i]
                 
                 target_bboxes = batch_label[i]#.numpy()
-                
+
                 pred_bboxes = batch_output[i]
                 target_bboxes = tool.reconstruct_bboxes(normalized_bboxes=target_bboxes,
                                                         resized_img_shape=(model.img_w, model.img_h),
@@ -75,37 +78,38 @@ if __name__ == "__main__":
                                                         org_img_shape=org_img_shape)
                 target_bboxes = target_bboxes.numpy()
 
-                print(target_bboxes)
+                # print(target_bboxes)
                 gt_bboxes_batch.append(target_bboxes)
 
                 img = cv2.imread(test_set.dataset.images_path[idx])
                 
+
                 if pred_bboxes["num_detected_bboxes"] > 0:
                     pred_bboxes = np.concatenate([pred_bboxes["class"].reshape(-1, 1), 
-                                                  pred_bboxes["position"].reshape(-1, 4),
-                                                  pred_bboxes["confidence"].reshape(-1, 1)], axis=1)
+                                                pred_bboxes["position"].reshape(-1, 4),
+                                                pred_bboxes["confidence"].reshape(-1, 1)], axis=1)
 
                     class_tp_fp_score = metric.measure_tpfp(pred_bboxes, target_bboxes, 0.5, bbox_format='cxcywh')
                     class_tp_fp_score_batch.append(class_tp_fp_score)
-                    
+                    # print(np.min(pred_bboxes[:, 3]), np.min(pred_bboxes[:, 4]))
                     for pred_bbox in pred_bboxes:
-                        if pred_bbox[-1] < .1:
-                            continue
+                        # if pred_bbox[-1] < .1:
+                        #     continue
                         
                         # print(pred_bbox[-1])
                         
-                        pred_bbox = pred_bbox.astype(np.int32)
-
+                        #pred_bbox = pred_bbox.astype(np.int32)
+                        
                         l = int(pred_bbox[1] - pred_bbox[3] / 2.)
                         r = int(pred_bbox[1] + pred_bbox[3] / 2.)
 
                         t = int(pred_bbox[2] - pred_bbox[4] / 2.)
                         b = int(pred_bbox[2] + pred_bbox[4] / 2.)
-                        
+
                         cv2.rectangle(img=img, pt1=(l, t), pt2=(r, b), color=(0, 255, 0), thickness=3)
 
-                # cv2.imshow('img', img)
-                # cv2.waitKey(1)
+                cv2.imshow('img', img)
+                cv2.waitKey(1)
                 
         mean_ap = metric.compute_map(class_tp_fp_score_batch, gt_bboxes_batch, num_classes=model.num_classes)
         print(mean_ap)

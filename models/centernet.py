@@ -9,6 +9,8 @@ from torch import Tensor
 from typing import Type, Any, Callable, Union, List, Optional
 import torch.nn as nn
 
+import torchvision.transforms.functional as F
+
 
 def fill_up_weights(up):
     w = up.weight.data
@@ -86,6 +88,7 @@ class CenterNet(nn.Module):
         
     def forward(self, x):
         self.img_h, self.img_w = x.shape[2:]
+        # flipped_x = F.hflip(x)
         
         x = self.backbone(x)
         
@@ -97,6 +100,20 @@ class CenterNet(nn.Module):
         txty_pred = self.txty_pred(x)
         twth_pred = self.twth_pred(x)
         
+        # flipped_x = self.backbone(flipped_x)
+        
+        # flipped_x = self.deconv5(flipped_x)
+        # flipped_x = self.deconv4(flipped_x)
+        # flipped_x = self.deconv3(flipped_x)
+        
+        # flipped_cls_pred = self.cls_pred(flipped_x)
+        # flipped_txty_pred = self.txty_pred(flipped_x)
+        # flipped_twth_pred = self.twth_pred(flipped_x)
+        
+        # cls_pred = (cls_pred + F.hflip(flipped_cls_pred))/2.
+        # txty_pred = (txty_pred + F.hflip(flipped_txty_pred))/2.
+        # twth_pred = (twth_pred + F.hflip(flipped_twth_pred))/2.
+ 
         out = torch.cat([txty_pred, twth_pred, cls_pred], dim=1) #batch_pred in compute_loss()
         
         if self.training:
