@@ -241,6 +241,32 @@ def augment_hsv(img, hgain=0.0138, sgain=0.664, vgain=0.464): # https://github.c
     img_hsv = cv2.merge((cv2.LUT(hue, lut_hue), cv2.LUT(sat, lut_sat), cv2.LUT(val, lut_val))).astype(dtype)
     return cv2.cvtColor(img_hsv, cv2.COLOR_HSV2BGR)
 
+def cutout(img, max_n_holes=5):
+    n_holes = random.randint(1, max_n_holes)
+    
+    img_h, img_w = img.shape[:2]
+    
+    erased_region_wmax = int(img_w * 0.2) 
+    erased_region_hmax = int(img_h * 0.2) 
+    
+    mask = np.zeros((img_h, img_w),dtype=np.bool)
+    for _ in range(n_holes):
+        erased_region_w = random.randint(0, erased_region_wmax)
+        erased_region_h = random.randint(0, erased_region_hmax)
+        
+        y = np.random.randint(img_h)
+        x = np.random.randint(img_w)
+
+        y1 = np.clip(y - erased_region_h // 2, 0, img_h)
+        y2 = np.clip(y + erased_region_h // 2, 0, img_h)
+        x1 = np.clip(x - erased_region_w // 2, 0, img_w)
+        x2 = np.clip(x + erased_region_w // 2, 0, img_w)
+
+        mask[y1:y2, x1:x2] = True
+
+    img[mask] = 127
+    return img
+
 def draw_bboxes(img, bboxes_cxcywh):
     img_h, img_w = img.shape[:2]
     bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh)
