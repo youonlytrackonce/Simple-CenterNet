@@ -21,9 +21,9 @@ def fill_up_weights(up):
             w[:, 0, i, j] = \
                 (1 - math.fabs(i / f - c)) * (1 - math.fabs(j / f - c))
     
-class DeConv(nn.Module):
+class Upsamling(nn.Module):
     def __init__(self, in_channels, out_channels, ksize, stride=2):
-        super(DeConv, self).__init__()
+        super(Upsamling, self).__init__()
         # deconv basic config
         if ksize == 4:
             padding = 1
@@ -57,9 +57,9 @@ class CenterNet(nn.Module):
         
         self.backbone = resnet18(pretrained=pretrained_backbone)
         
-        self.deconv5 = DeConv(512, 256, ksize=4, stride=2) # 32 -> 16
-        self.deconv4 = DeConv(256, 128, ksize=4, stride=2) # 16 -> 8
-        self.deconv3 = DeConv(128, 64, ksize=4, stride=2) #  8 -> 4
+        self.upsample1 = Upsamling(512, 256, ksize=4, stride=2) # 32 -> 16
+        self.upsample2 = Upsamling(256, 128, ksize=4, stride=2) # 16 -> 8
+        self.upsample3 = Upsamling(128, 64, ksize=4, stride=2) #  8 -> 4
 
         self.cls_pred = nn.Sequential(
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
@@ -85,37 +85,32 @@ class CenterNet(nn.Module):
         #for decoding
         self.max_pool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
         self.max_num_dets = 100
-        
-    def forward(self, x):
-        self.img_h, self.img_w = x.shape[2:]
-        # flipped_x = F.hflip(x)
+
+    def encode(self, x, flip=False):
+        if flip==True:
+            x = F.hflip(x)
         
         x = self.backbone(x)
         
-        x = self.deconv5(x)
-        x = self.deconv4(x)
-        x = self.deconv3(x)
+        x = self.upsample1(x)
+        x = self.upsample2(x)
+        x = self.upsample3(x)
         
         cls_pred = self.cls_pred(x)
         txty_pred = self.txty_pred(x)
         twth_pred = self.twth_pred(x)
         
-        # flipped_x = self.backbone(flipped_x)
-        
-        # flipped_x = self.deconv5(flipped_x)
-        # flipped_x = self.deconv4(flipped_x)
-        # flipped_x = self.deconv3(flipped_x)
-        
-        # flipped_cls_pred = self.cls_pred(flipped_x)
-        # flipped_txty_pred = self.txty_pred(flipped_x)
-        # flipped_twth_pred = self.twth_pred(flipped_x)
-        
-        # cls_pred = (cls_pred + F.hflip(flipped_cls_pred))/2.
-        # txty_pred = (txty_pred + F.hflip(flipped_txty_pred))/2.
-        # twth_pred = (twth_pred + F.hflip(flipped_twth_pred))/2.
- 
-        out = torch.cat([txty_pred, twth_pred, cls_pred], dim=1) #batch_pred in compute_loss()
-        
+        out = torch.cat([txty_pred, twth_pred, cls_pred], dim=1)
+        return out 
+    
+    def forward(self, x, flip=False):
+        self.img_h, self.img_w = x.shape[2:]
+
+        out = self.encode(x)
+        if flip:
+            flipped_out = self.encode(x, flip=True)
+            out = (out + F.hflip(flipped_out))/2.
+              
         if self.training:
             return out
         else:
