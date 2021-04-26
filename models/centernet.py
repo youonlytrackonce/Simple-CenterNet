@@ -83,7 +83,7 @@ class CenterNet(nn.Module):
         )
         
         #for decoding
-        self.max_pool = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
+        self.max_pool = nn.MaxPool2d(kernel_size=5, stride=1, padding=2)
         self.max_num_dets = 100
 
     def encode(self, x, flip=False):
@@ -107,10 +107,11 @@ class CenterNet(nn.Module):
         self.img_h, self.img_w = x.shape[2:]
 
         out = self.encode(x)
+
         if flip:
             flipped_out = self.encode(x, flip=True)
             out = (out + F.hflip(flipped_out))/2.
-              
+        
         if self.training:
             return out
         else:
