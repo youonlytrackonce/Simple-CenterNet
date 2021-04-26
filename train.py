@@ -16,10 +16,10 @@ if __name__ == "__main__":
     parser.add_argument('--img-w', default=512, type=int)
     parser.add_argument('--img-h', default=512, type=int)
 
-    parser.add_argument('--lr', default=1.25e-4, type=float, help='initial learning rate')
     parser.add_argument('--weights', type=str, default="", help='load weights to resume training')
     parser.add_argument('--total-epoch', type=int, default=150, help='total_epoch')
     parser.add_argument('--root', default="./dataset/VOCDevkit", help='Location of dataset directory')
+    parser.add_argument('--dataset-name', type=str, default="voc")
     parser.add_argument('--num-workers', default=8, type=int, help='Number of workers used in dataloading')
     parser.add_argument('--save-folder', default='./weights', type=str, help='where you save weights')
     parser.add_argument('--seed', default=7777, type=int)
@@ -34,8 +34,8 @@ if __name__ == "__main__":
     model = centernet.CenterNet(pretrained_backbone=True)
     model = model.to(device=device)
     
-    training_set = dataset.DetectionDataset(root="C:/dataset/VOCDevkit",
-                                            dataset_name="voc", 
+    training_set = dataset.DetectionDataset(root=opt.root, 
+                                            dataset_name=opt.dataset_name, 
                                             set="train",
                                             img_w=opt.img_w, img_h=opt.img_h,
                                             use_augmentation=True,

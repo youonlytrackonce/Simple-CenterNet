@@ -10,19 +10,19 @@ import cv2
 import argparse
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='YOLO-v3 tiny Detection')
-    parser.add_argument('--batch-size', default=16, type=int,
+    parser = argparse.ArgumentParser(description='CenterNet Detection')
+    parser.add_argument('--batch-size', default=64, type=int,
                         help='Batch size for training')
 
     parser.add_argument('--img-w', default=512, type=int)
     parser.add_argument('--img-h', default=512, type=int)
 
-    parser.add_argument('--lr', default=1e-3, type=float, help='initial learning rate')
     parser.add_argument('--weights', type=str, default="", help='load weights to resume training')
     parser.add_argument('--root', default="./dataset/VOCDevkit", help='Location of dataset directory')
+    parser.add_argument('--dataset-name', type=str, default="voc")
     parser.add_argument('--num-workers', default=8, type=int, help='Number of workers used in dataloading')
-    parser.add_argument('--save-folder', default='./weights', type=str, help='where you save weights')
-    parser.add_argument('--seed', default=7777, type=int)
+    parser.add_argument('--flip', action='store_true')
+    
 
     opt = parser.parse_args()
     
@@ -34,8 +34,8 @@ if __name__ == "__main__":
     model.eval()
     model = model.to(device=device)
     
-    test_set = dataset.DetectionDataset(root="C:/dataset/VOCDevkit", 
-                                        dataset_name="voc", 
+    test_set = dataset.DetectionDataset(root=opt.root, 
+                                        dataset_name=opt.dataset_name, 
                                         set="test",
                                         img_w=opt.img_w, 
                                         img_h=opt.img_h,
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             batch_org_img_shape = batch_data["org_img_shape"]
             batch_padded_ltrb = batch_data["padded_ltrb"]
 
-            batch_output = model(batch_img)
+            batch_output = model(batch_img, flip=opt.flip)
             batch_output = model.post_processing(batch_output, batch_org_img_shape, batch_padded_ltrb, confidence_threshold=1e-2)
             
             for i in range(len(batch_img)):
@@ -88,10 +88,9 @@ if __name__ == "__main__":
                     pred_bboxes = np.concatenate([pred_bboxes["class"].reshape(-1, 1), 
                                                 pred_bboxes["position"].reshape(-1, 4),
                                                 pred_bboxes["confidence"].reshape(-1, 1)], axis=1)
-
+         
                     class_tp_fp_score = metric.measure_tpfp(pred_bboxes, target_bboxes, 0.5, bbox_format='cxcywh')
                     class_tp_fp_score_batch.append(class_tp_fp_score)
-                    # print(np.min(pred_bboxes[:, 3]), np.min(pred_bboxes[:, 4]))
                     for pred_bbox in pred_bboxes:
                         # if pred_bbox[-1] < .1:
                         #     continue
