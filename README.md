@@ -19,7 +19,7 @@ You don't need to bulid some cpp code to use Deformable Convolution used in Cent
 ## What's difference between paper and this repo?
 
 ### Paper
-Refer tp `Appendix D: Experiments on PascalVOC` in the paper
+Refer to `Appendix D: Experiments on PascalVOC` in the paper
 - Epochs: 70:
 - Learning rate scheduler: MultiStepLR(milestones=[45, 60], gamma=0.1)
 - Augmentation: RandomScale, RandomTranslation, RandomCrop, Color Jittering
