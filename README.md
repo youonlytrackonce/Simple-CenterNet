@@ -5,13 +5,23 @@ PyTorch Implementation of CenterNet([Object as Points](https://arxiv.org/abs/190
 
 ## Performance
 
-|Repo| Backbone     |  Dataset    |  mAP    | Trained model    |  
-|:------------:|:------------:|:-------:|:-------:|:-----------------:|  
-|**This Repo**|ResNet-18| VOC(Training:07+12, Test: 07)    | 76.1      |   |  
-|[xingyizhou/CenterNet](https://github.com/xingyizhou/CenterNet)|ResNet-18| VOC(Training:07+12, Test: 07)    | 75.6      |   |  
-|[Ximilar-com/xcenternet](https://github.com/Ximilar-com/xcenternet)|ResNet-18     | VOC(Training:07+12, Test: 07)    | 70.0      | |
-|[xuannianz/keras-CenterNet](https://github.com/xuannianz/keras-CenterNet)|**ResNet-50**    | VOC(Training:07+12, Test: 07)    | 72.9      | |
-|[bubbliiiing/centernet-keras](https://github.com/bubbliiiing/centernet-keras)|**ResNet-50**     | VOC(Training:07+12, Test: 07)    | 77.1      | |
+## On VOC(Training:0712 trainval, Test:07)
+
+|Repo| Backbone     | 0.5 mAP    | Trained model    |  
+|:------------:|:-------:|:-------:|:-----------------:|  
+|**This Repo**|ResNet-18|  76.1      |   |  
+|[xingyizhou/CenterNet](https://github.com/xingyizhou/CenterNet)|ResNet-18|75.6      |   |  
+|[Ximilar-com/xcenternet](https://github.com/Ximilar-com/xcenternet)|ResNet-18     |  70.0      | |
+|[xuannianz/keras-CenterNet](https://github.com/xuannianz/keras-CenterNet)|**ResNet-50**    |  72.9      | |
+|[bubbliiiing/centernet-keras](https://github.com/bubbliiiing/centernet-keras)|**ResNet-50**     | 77.1      | |
+
+## On COCO
+
+|Repo| Backbone     |  mAP    | Trained model    |  
+|:------------:|:-------:|:-------:|:-----------------:|  
+|**This Repo**|ResNet-18|       |   |  
+|[xingyizhou/CenterNet](https://github.com/xingyizhou/CenterNet)|ResNet-18| 28.1      |   |  
+
 
 ## What's difference between paper and this repo?
 
