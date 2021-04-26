@@ -7,7 +7,7 @@ PyTorch Implementation of CenterNet([Object as Points](https://arxiv.org/abs/190
 
 |Repo| Backbone     |  Dataset    |  mAP    | Trained model    |  
 |:------------:|:------------:|:-------:|:-------:|:-----------------:|  
-|Ours|ResNet-18| VOC(Training:07+12, Test: 07)    | 76.1      |   |  
+|**This Repo**|ResNet-18| VOC(Training:07+12, Test: 07)    | 76.1      |   |  
 |[xingyizhou/CenterNet](https://github.com/xingyizhou/CenterNet)|ResNet-18| VOC(Training:07+12, Test: 07)    | 75.6      |   |  
 |[Ximilar-com/xcenternet](https://github.com/Ximilar-com/xcenternet)|ResNet-18     | VOC(Training:07+12, Test: 07)    | 70.0      | |
 |[xuannianz/keras-CenterNet](https://github.com/xuannianz/keras-CenterNet)|**ResNet-50**    | VOC(Training:07+12, Test: 07)    | 72.9      | |
