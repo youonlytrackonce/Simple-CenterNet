@@ -6,7 +6,7 @@ I re-implemented CenterNet([Object as Points](https://arxiv.org/abs/1904.07850))
 
 |Repo| Backbone     |  Dataset    |  mAP    | trained model    |  
 |:------------:|:------------:|:-------:|:-------:|:-----------------:|  
-|Ours|ResNet-18| VOC(Training:07+12, Test: 07)    | 76.1      | [google drive]()  |  
+|Ours|ResNet-18| VOC(Training:07+12, Test: 07)    | 76.1      |   |  
 |[xingyizhou/CenterNet](https://github.com/xingyizhou/CenterNet)|ResNet-18| VOC(Training:07+12, Test: 07)    | 75.6      |   |  
 |[Ximilar-com/xcenternet](https://github.com/Ximilar-com/xcenternet)|ResNet-18     | VOC(Training:07+12, Test: 07)    | 70.0      | |
 |[xuannianz/keras-CenterNet](https://github.com/xuannianz/keras-CenterNet)|**ResNet-50**    | VOC(Training:07+12, Test: 07)    | 72.9      | |
@@ -21,12 +21,15 @@ Refer tp `Appendix D: Experiments on PascalVOC` in the paper
 - Augmentation: RandomScale, RandomTranslation, RandomCrop, Color Jittering
 - Kernel size of max pooling: 3
 
+
 ### This Repo
 
 - Epochs: 140
 - Learning rate scheduler: CosineDecay(per iteration)
 - Augmentation: RandomScale, RandomTranslation, Mosaic, Color Jittering, CutOut
 - Kernel size of max pooling: 5
+- Gaussian Kernel Generation Method: [Training-Time-Friendly Network for Real-Time Object Detection
+](https://arxiv.org/abs/1909.00700)
 
 ## Setup
 ```
