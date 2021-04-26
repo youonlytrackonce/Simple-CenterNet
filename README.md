@@ -8,7 +8,7 @@ You don't need to bulid some cpp code to use Deformable Convolution used in Cent
 
 ## Performance
 
-|Repo| Backbone     |  Dataset    |  mAP    | trained model    |  
+|Repo| Backbone     |  Dataset    |  mAP    | Trained model    |  
 |:------------:|:------------:|:-------:|:-------:|:-----------------:|  
 |Ours|ResNet-18| VOC(Training:07+12, Test: 07)    | 76.1      |   |  
 |[xingyizhou/CenterNet](https://github.com/xingyizhou/CenterNet)|ResNet-18| VOC(Training:07+12, Test: 07)    | 75.6      |   |  
