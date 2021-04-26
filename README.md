@@ -21,15 +21,14 @@ Refer tp `Appendix D: Experiments on PascalVOC` in the paper
 - Augmentation: RandomScale, RandomTranslation, RandomCrop, Color Jittering
 - Kernel size of max pooling: 3
 
-
 ### This Repo
 
 - Epochs: 140
 - Learning rate scheduler: CosineDecay(per iteration)
 - Augmentation: RandomScale, RandomTranslation, Mosaic, Color Jittering, CutOut
 - Kernel size of max pooling: 5
-- Gaussian Kernel Generation Method: [Training-Time-Friendly Network for Real-Time Object Detection
-](https://arxiv.org/abs/1909.00700)
+- Gaussian Kernel Generation Method: follows the method proposed in [Training-Time-Friendly Network for Real-Time Object Detection
+](https://arxiv.org/abs/1909.00700)(It’s not carefully selected. I just think that it is more reasonable than original one.)
 
 ## Setup
 ```
