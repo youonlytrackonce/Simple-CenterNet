@@ -258,7 +258,7 @@ def scatter_gaussian_kernel(heatmap, bbox_icx, bbox_icy, bbox_w, bbox_h, alpha=0
     return heatmap
 
 #Read Training-Time-Friendly Network for Real-Time Object Detection paper for more details
-def focal_loss(pred, gaussian_kernel, alpha=2., beta=4., eps=1e-4):
+def focal_loss(pred, gaussian_kernel, alpha=2., beta=4., eps=1e-5):
     pred = torch.sigmoid(pred).clamp(eps, 1.-eps)
     
     positive_mask = gaussian_kernel == 1.
