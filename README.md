@@ -27,7 +27,7 @@ PyTorch Implementation of CenterNet([Object as Points](https://arxiv.org/abs/190
 
 ### Paper
 Refer to `Appendix D: Experiments on PascalVOC` in the paper
-- Epochs: 70:
+- Epochs: 70
 - Learning rate scheduler: MultiStepLR(milestones=[45, 60], gamma=0.1)
 - Augmentation: RandomScale, RandomTranslation, RandomCrop, Color Jittering
 - Kernel size of max pooling: 3
