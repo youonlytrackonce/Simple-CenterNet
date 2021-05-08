@@ -160,6 +160,52 @@ def random_scale(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127), lower_
             return img, bboxes_cxcywh
     return img, bboxes_cxcywh
 
+def random_rotation(img, bboxes_cxcywh, angle=3., trial=40, p=1.0, border_value=(127, 127, 127)):
+    if random.random() < p:
+        img_h, img_w = img.shape[0:2]
+        
+        bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh) #tl br
+        bboxes_xyxy[:, [0, 2]] *= img_w
+        bboxes_xyxy[:, [1, 3]] *= img_h
+
+        num_bboxes = len(bboxes_xyxy)
+        bboxes_xyxyxyxy = np.ones((num_bboxes, 4, 3)) #tl tr bl br
+        
+        bboxes_xyxyxyxy[:, 0, [0, 1]] = bboxes_xyxy[:, [0, 1]]# tl
+        bboxes_xyxyxyxy[:, 1, [0, 1]] = bboxes_xyxy[:, [2, 1]]# tr
+        bboxes_xyxyxyxy[:, 2, [0, 1]] = bboxes_xyxy[:, [0, 3]]# bl
+        bboxes_xyxyxyxy[:, 3, [0, 1]] = bboxes_xyxy[:, [2, 3]]# br
+        
+        bboxes_xyxyxyxy = bboxes_xyxyxyxy.reshape(-1, 3)
+        
+        for _ in range(trial):
+            angle = random.uniform(-angle, angle)
+            rm = cv2.getRotationMatrix2D((img_w // 2, img_h // 2), angle=angle, scale=1.0) # rotation matrix
+            
+            rotated_bboxes_xyxyxyxy = bboxes_xyxyxyxy.dot(rm.T)
+            rotated_bboxes_xyxyxyxy = rotated_bboxes_xyxyxyxy.reshape((num_bboxes, 4, 2))
+            
+            rotated_bboxes_xyxy = np.zeros_like(bboxes_xyxy)
+            
+            rotated_bboxes_xyxy[:, 0] = np.min(rotated_bboxes_xyxyxyxy[..., 0], axis=1)
+            rotated_bboxes_xyxy[:, 1] = np.min(rotated_bboxes_xyxyxyxy[..., 1], axis=1)
+            rotated_bboxes_xyxy[:, 2] = np.max(rotated_bboxes_xyxyxyxy[..., 0], axis=1)
+            rotated_bboxes_xyxy[:, 3] = np.max(rotated_bboxes_xyxyxyxy[..., 1], axis=1)
+            
+            if np.min(rotated_bboxes_xyxy) < 0:
+                continue
+            
+            if np.max(rotated_bboxes_xyxy[:, [0, 2]]) >= img_w or np.max(rotated_bboxes_xyxy[:, [1, 3]]) >= img_h:
+                continue
+            
+            rotated_bboxes_xyxy[:, [0, 2]] /= img_w
+            rotated_bboxes_xyxy[:, [1, 3]] /= img_h
+            
+            img = cv2.warpAffine(img, rm, (img_w, img_h), flags=cv2.INTER_LINEAR, borderValue=border_value)
+            bboxes_cxcywh = xyxy2cxcywh(rotated_bboxes_xyxy)
+            return img, bboxes_cxcywh
+    return img, bboxes_cxcywh
+
 def mosaic(img, bboxes_cxcywh, bboxes_class, dataset, keep_ratio=True, bbox_wmin_thr=32, bbox_hmin_thr=32, trial=40, p=0.5):
     if random.random() <= p:
         img_h, img_w = img.shape[:2]
