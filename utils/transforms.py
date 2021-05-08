@@ -181,12 +181,12 @@ def random_rotation(img, bboxes_cxcywh, angle=3., trial=40, p=1.0, border_value=
         for _ in range(trial):
             angle = random.uniform(-angle, angle)
             rm = cv2.getRotationMatrix2D((img_w // 2, img_h // 2), angle=angle, scale=1.0) # rotation matrix
-            
-            rotated_bboxes_xyxyxyxy = bboxes_xyxyxyxy.dot(rm.T)
+
+            rotated_bboxes_xyxyxyxy = (rm @ bboxes_xyxyxyxy.T).T
             rotated_bboxes_xyxyxyxy = rotated_bboxes_xyxyxyxy.reshape((num_bboxes, 4, 2))
             
             rotated_bboxes_xyxy = np.zeros_like(bboxes_xyxy)
-            
+
             rotated_bboxes_xyxy[:, 0] = np.min(rotated_bboxes_xyxyxyxy[..., 0], axis=1)
             rotated_bboxes_xyxy[:, 1] = np.min(rotated_bboxes_xyxyxyxy[..., 1], axis=1)
             rotated_bboxes_xyxy[:, 2] = np.max(rotated_bboxes_xyxyxyxy[..., 0], axis=1)
