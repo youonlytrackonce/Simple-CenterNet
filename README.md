@@ -34,7 +34,7 @@ Refer to `Appendix D: Experiments on PascalVOC` in the paper
 
 ### This Repo
 
-- Epochs: 140
+- Epochs: 150
 - Learning rate scheduler: CosineDecay(per iteration)
 - Augmentation: RandomScale, RandomTranslation, Mosaic, Color Jittering, CutOut
 - Kernel size of max pooling: 5
