@@ -206,6 +206,65 @@ def random_rotation(img, bboxes_cxcywh, angle=3., trial=40, p=1.0, border_value=
             return img, bboxes_cxcywh
     return img, bboxes_cxcywh
 
+def random_crop(img, bboxes_cxcywh, bboxes_class, trial=50, p=1.0, border_value=(127, 127, 127)):
+    if random.random() < p:
+        img_h, img_w = img.shape[0:2]
+        
+        bboxes_xyxy = cxcywh2xyxy(bboxes_cxcywh) #tl br
+        bboxes_xyxy[:, [0, 2]] *= img_w
+        bboxes_xyxy[:, [1, 3]] *= img_h
+
+        bboxes_w = bboxes_cxcywh[:, 2] * img_w
+        bboxes_h = bboxes_cxcywh[:, 3] * img_h
+        bboxes_area = bboxes_w * bboxes_h
+        
+        for _ in range(trial):
+            cropped_w = random.randint(img_w//8, img_w)
+            cropped_h = random.randint(img_h//8, img_h)
+            
+            cropped_xmin = random.randint(0, max(img_w-cropped_w-1,1))
+            cropped_ymin = random.randint(0, max(img_h-cropped_h-1,1))
+            
+            cropped_xmax = cropped_xmin + cropped_w
+            cropped_ymax = cropped_ymin + cropped_h
+            
+            cropped_bboxes_xyxy = bboxes_xyxy.copy()
+            cropped_bboxes_xyxy[:, [0, 2]] = np.clip(cropped_bboxes_xyxy[:, [0, 2]], a_min=cropped_xmin, a_max=cropped_xmax)
+            cropped_bboxes_xyxy[:, [1, 3]] = np.clip(cropped_bboxes_xyxy[:, [1, 3]], a_min=cropped_ymin, a_max=cropped_ymax)
+            
+            cropped_bboxes_w = cropped_bboxes_xyxy[:, 2] - cropped_bboxes_xyxy[:, 0]
+            cropped_bboxes_h = cropped_bboxes_xyxy[:, 3] - cropped_bboxes_xyxy[:, 1]
+            cropped_bboxes_area = cropped_bboxes_w * cropped_bboxes_h
+            
+            iou = (cropped_bboxes_area/bboxes_area)
+            size_constraint = (cropped_bboxes_area > 0) & (cropped_bboxes_w >= 3) & (cropped_bboxes_h >= 3) & (iou > 0.1)
+            
+            cropped_bboxes_xyxy = cropped_bboxes_xyxy[size_constraint]
+            if len(cropped_bboxes_xyxy) == 0: continue
+
+            iou = iou[size_constraint]
+            if np.count_nonzero(iou < 0.9) > 0: continue
+                                    
+            img = img[cropped_ymin:cropped_ymax, cropped_xmin:cropped_xmax]
+            img_h, img_w = img.shape[0:2]
+            
+            # pad_r = max(cropped_h - cropped_w, 0)
+            # pad_b = max(cropped_w - cropped_h, 0)
+            
+            # img = cv2.copyMakeBorder(img, 0, pad_b, 0, pad_r, cv2.BORDER_CONSTANT, value=border_value)
+            # img_h, img_w = img.shape[0:2]
+            
+            cropped_bboxes_xyxy[:, [0, 2]] -= cropped_xmin
+            cropped_bboxes_xyxy[:, [1, 3]] -= cropped_ymin
+            cropped_bboxes_xyxy[:, [0, 2]] /= img_w
+            cropped_bboxes_xyxy[:, [1, 3]] /= img_h
+            
+            bboxes_cxcywh = xyxy2cxcywh(cropped_bboxes_xyxy)
+            bboxes_class = bboxes_class[size_constraint]
+            
+            return img, bboxes_cxcywh, bboxes_class
+    return img, bboxes_cxcywh, bboxes_class
+
 def mosaic(img, bboxes_cxcywh, bboxes_class, dataset, keep_ratio=True, bbox_wmin_thr=32, bbox_hmin_thr=32, trial=40, p=0.5):
     if random.random() <= p:
         img_h, img_w = img.shape[:2]
