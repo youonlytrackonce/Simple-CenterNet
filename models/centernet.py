@@ -83,7 +83,7 @@ class CenterNet(nn.Module):
         )
         
         #for decoding
-        self.max_pool = nn.MaxPool2d(kernel_size=5, stride=1, padding=2)
+        self.max_pool = nn.MaxPool2d(kernel_size=7, stride=1, padding=3)
         self.max_num_dets = 100
 
     def encode(self, x, flip=False):
