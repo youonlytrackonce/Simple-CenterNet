@@ -1,4 +1,3 @@
-from numpy.lib.function_base import diff
 from . import voc0712
 from . import transforms
 
