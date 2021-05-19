@@ -48,10 +48,7 @@ class DetectionDataset(Dataset):  # for training/testing
         
         bboxes_class = label[:, 0].reshape(-1, 1)
         bboxes_cxcywh = label[:, 1:].reshape(-1, 4)
-        
-        difficult = label[:, 0] < 0
-        bboxes_class[difficult] = -bboxes_class[difficult] + 1
-        
+
         #resize image
         if self.keep_ratio:
             img, bboxes_cxcywh, org_img_shape, padded_ltrb  = transforms.aspect_ratio_preserved_resize(img,
@@ -76,9 +73,7 @@ class DetectionDataset(Dataset):  # for training/testing
         
         label = np.concatenate([bboxes_class, bboxes_cxcywh], axis=1)
         label = torch.tensor(label, dtype=torch.float32)
-        
-        difficult = torch.tensor(difficult, dtype=torch.bool)
-        
+
         data = {}
         data["img"] = img
         data["label"] = label
