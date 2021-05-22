@@ -25,21 +25,27 @@ PyTorch Implementation of CenterNet([Object as Points](https://arxiv.org/abs/190
 
 ## What's difference between paper and this repo?
 
-### Paper
+### VOC
+
+#### Paper
 Refer to `Appendix D: Experiments on PascalVOC` in the paper
-- Epochs: 70
 - Learning rate scheduler: MultiStepLR(milestones=[45, 60], gamma=0.1)
 - Augmentation: RandomScale, RandomTranslation, RandomCrop, Color Jittering
 - Kernel size of max pooling: 3
 
-### This Repo
+#### This Repo
 
-- Epochs: 70
 - Learning rate scheduler: CosineDecay(per iteration)
 - Augmentation: RandomScale, RandomTranslation, RandomCrop, Mosaic, Color Jittering
 - Kernel size of max pooling: 7
 - Gaussian Kernel Generation Method: followed the method proposed in [Training-Time-Friendly Network for Real-Time Object Detection
 ](https://arxiv.org/abs/1909.00700)(It’s not carefully selected. I just think that it is more reasonable than original one.)
+
+### COCO17
+
+#### Paper
+
+#### This Repo
 
 ## Setup
 ```
