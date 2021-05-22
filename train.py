@@ -17,7 +17,7 @@ if __name__ == "__main__":
     parser.add_argument('--img-h', default=512, type=int)
 
     parser.add_argument('--weights', type=str, default="", help='load weights to resume training')
-    parser.add_argument('--total-epoch', type=int, default=150, help='total_epoch')
+    parser.add_argument('--total-epoch', type=int, default=70, help='total_epoch')
     parser.add_argument('--root', default="./dataset/VOCDevkit", help='Location of dataset directory')
     parser.add_argument('--dataset-name', type=str, default="voc")
     parser.add_argument('--num-workers', default=8, type=int, help='Number of workers used in dataloading')
@@ -55,30 +55,6 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=initial_lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = 0.
-    
-    #     from models import dcn
-
-    # params = []
-    # deformable_conv_params = []
-    
-    # for m in model.children():
-    #     if isinstance(m, dcn.DeformableConv2d):
-    #         for p in m.offset_conv.parameters():
-    #             deformable_conv_params.append(p)
-                
-    #         for p in m.modulator_conv.parameters():
-    #             deformable_conv_params.append(p)
-                
-    #         for p in m.regular_conv.parameters():
-    #             params.append(p)
-    #     else:
-    #         for p in m.parameters():
-    #             params.append(p)
-
-    # optimizer = torch.optim.Adam([{"params": params, "lr": opt.lr},
-    #                               {"params": deformable_conv_params, "lr": opt.lr * 0.1},
-    #                               ])
-    
     
     iterations_per_epoch = num_training_set_imgs // opt.batch_size 
     total_iteration = iterations_per_epoch * opt.total_epoch

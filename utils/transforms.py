@@ -206,7 +206,7 @@ def random_rotation(img, bboxes_cxcywh, angle=3., trial=40, p=1.0, border_value=
             return img, bboxes_cxcywh
     return img, bboxes_cxcywh
 
-def random_crop(img, bboxes_cxcywh, bboxes_class, trial=50, p=1.0, border_value=(127, 127, 127)):
+def random_crop(img, bboxes_cxcywh, bboxes_class, trial=50, p=1.0, border_value=127):
     if random.random() < p:
         img_h, img_w = img.shape[0:2]
         
@@ -244,18 +244,11 @@ def random_crop(img, bboxes_cxcywh, bboxes_class, trial=50, p=1.0, border_value=
 
             iou = iou[size_constraint]
             if np.count_nonzero(iou < 0.9) > 0: continue
-                                    
-            img = img[cropped_ymin:cropped_ymax, cropped_xmin:cropped_xmax]
-            img_h, img_w = img.shape[0:2]
+
+            mask = np.zeros_like(img)
+            mask[cropped_ymin:cropped_ymax, cropped_xmin:cropped_xmax] = 1
             
-            # pad_r = max(cropped_h - cropped_w, 0)
-            # pad_b = max(cropped_w - cropped_h, 0)
-            
-            # img = cv2.copyMakeBorder(img, 0, pad_b, 0, pad_r, cv2.BORDER_CONSTANT, value=border_value)
-            # img_h, img_w = img.shape[0:2]
-            
-            cropped_bboxes_xyxy[:, [0, 2]] -= cropped_xmin
-            cropped_bboxes_xyxy[:, [1, 3]] -= cropped_ymin
+            img[mask==0] = border_value
             cropped_bboxes_xyxy[:, [0, 2]] /= img_w
             cropped_bboxes_xyxy[:, [1, 3]] /= img_h
             
