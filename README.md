@@ -62,12 +62,20 @@ else:
 scripts/download-voc0712.sh
 ```
 
-## Training(on VOC07+12)
+## Training
+
+### VOC07+12
 ```
-python train.py --batch-size 32
+python train.py --batch-size 32 --total-epoch 70
 ```
 
-## Evaluation(on VOC07)
+### COCO17
+
+## Evaluation
+
+### VOC07+12
 ```
-python eval.py --batch-size 32 --weights your_model.pth --flip
+python eval.py --weights your_model.pth --flip
 ```
+
+### COCO17
