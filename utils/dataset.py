@@ -58,7 +58,7 @@ class DetectionDataset(Dataset):  # for training/testing
         
         #augmentation
         if self.use_augmentation:
-            img, bboxes_cxcywh, bboxes_class = transforms.random_crop(img, bboxes_cxcywh, bboxes_class)
+            img, bboxes_cxcywh, bboxes_class = transforms.random_crop(img, bboxes_cxcywh, bboxes_class, p=1.0)
             img, bboxes_cxcywh, bboxes_class = transforms.mosaic(img, bboxes_cxcywh, bboxes_class, self.dataset, self.keep_ratio, p=0.5)
             img, bboxes_cxcywh = transforms.horizontal_flip(img, bboxes_cxcywh, p=0.5)
             img, bboxes_cxcywh = transforms.random_translation(img, bboxes_cxcywh, p=1.0)
