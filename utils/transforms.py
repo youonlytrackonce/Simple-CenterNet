@@ -326,6 +326,32 @@ def mosaic(img, bboxes_cxcywh, bboxes_class, dataset, keep_ratio=True, bbox_wmin
         return mosaic_img, mosaic_bboxes_cxcywh, mosaic_bboxes_class
     return img, bboxes_cxcywh, bboxes_class
 
+def mixup(img, bboxes_cxcywh, bboxes_class, dataset, keep_ratio=True, use_mosaic=False, alpha=8.0, beta=8.0, p=0.5, mosaic_p=0.5):
+    if random.random() <= p:
+        img_h, img_w = img.shape[:2]
+            
+        r = np.random.beta(alpha, beta)
+        rand_idx = random.randint(0, len(dataset)-1)
+        mixed_img, mixed_label = dataset[rand_idx]
+            
+        mixed_bboxes_class = mixed_label[:, 0].reshape(-1, 1)
+        mixed_bboxes_cxcywh = mixed_label[:, 1:].reshape(-1, 4)
+        
+        if keep_ratio:
+            mixed_img, mixed_bboxes_cxcywh, _, _ = aspect_ratio_preserved_resize(mixed_img, dsize=(img_w, img_h), bboxes_cxcywh=mixed_bboxes_cxcywh)
+        else:
+            mixed_img = cv2.resize(mixed_img, dsize=(img_w, img_h))
+        
+        if use_mosaic:
+            mixed_img, mixed_bboxes_cxcywh, mixed_bboxes_class = mosaic(mixed_img, mixed_bboxes_cxcywh, mixed_bboxes_class, dataset, keep_ratio, p=mosaic_p)
+        
+        img = (img * r + mixed_img * (1 - r)).astype(np.uint8)
+        bboxes_cxcywh = np.concatenate([bboxes_cxcywh, mixed_bboxes_cxcywh], axis=0)
+        bboxes_class = np.concatenate([bboxes_class, mixed_bboxes_class], axis=0)
+        return img, bboxes_cxcywh, bboxes_class
+    return img, bboxes_cxcywh, bboxes_class
+        
+        
 def augment_hsv(img, hgain=0.0138, sgain=0.664, vgain=0.464): # https://github.com/ultralytics/yolov5/blob/77415a42e5975ea356393c9f1d5cff0ae8acae2c/data/hyp.finetune.yaml
     r = np.random.uniform(-1, 1, 3) * [hgain, sgain, vgain] + 1  # random gains
     hue, sat, val = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
