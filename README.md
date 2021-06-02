@@ -36,7 +36,7 @@ Refer to `Appendix D: Experiments on PascalVOC` in the paper
 #### This Repo
 
 - Learning rate scheduler: CosineDecay(per iteration)
-- Augmentation: HorizontalFlip, RandomScale, RandomTranslation, RandomCrop, **Mosaic**, **Mixup**, and Color Jittering
+- Augmentation: HorizontalFlip, RandomScale, RandomTranslation, RandomCrop, **Mosaic**, **Mixup(with Mosaic + 1.0 AP)**, and Color Jittering
 - Kernel size of max pooling: 7
 - Gaussian Kernel Generation Method: followed the method proposed in [Training-Time-Friendly Network for Real-Time Object Detection
 ](https://arxiv.org/abs/1909.00700)(It’s not carefully selected. I just think that it is more reasonable than original one.)
