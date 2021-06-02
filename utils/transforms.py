@@ -326,7 +326,7 @@ def mosaic(img, bboxes_cxcywh, bboxes_class, dataset, keep_ratio=True, bbox_wmin
         return mosaic_img, mosaic_bboxes_cxcywh, mosaic_bboxes_class
     return img, bboxes_cxcywh, bboxes_class
 
-def mixup(img, bboxes_cxcywh, bboxes_class, dataset, keep_ratio=True, use_mosaic=False, alpha=8.0, beta=8.0, p=0.5, mosaic_p=0.5):
+def mixup(img, bboxes_cxcywh, bboxes_class, dataset, keep_ratio=True, use_mosaic=False, alpha=32.0, beta=32.0, p=0.5, mosaic_p=0.5):
     if random.random() <= p:
         img_h, img_w = img.shape[:2]
             
