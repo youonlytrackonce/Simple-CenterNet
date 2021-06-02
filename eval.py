@@ -1,5 +1,6 @@
 from models import centernet
 from utils import dataset
+from utils import voc0712
 from utils import tool
 from evaluation import metric
 
@@ -8,6 +9,8 @@ import torch
 import cv2
 
 import argparse
+import os
+import shutil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CenterNet Detection')
@@ -23,7 +26,6 @@ if __name__ == "__main__":
     parser.add_argument('--num-workers', default=8, type=int, help='Number of workers used in dataloading')
     parser.add_argument('--flip', action='store_true')
     
-
     opt = parser.parse_args()
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -49,6 +51,9 @@ if __name__ == "__main__":
                                                   pin_memory=True,
                                                   drop_last=False)
     
+    tool.mkdir("gt")
+    tool.mkdir("pred")
+        
     gt_bboxes_batch = []
     class_tp_fp_score_batch = []
     with torch.no_grad():
@@ -78,37 +83,52 @@ if __name__ == "__main__":
                                                         org_img_shape=org_img_shape)
                 target_bboxes = target_bboxes.numpy()
 
-                # print(target_bboxes)
                 gt_bboxes_batch.append(target_bboxes)
 
                 img = cv2.imread(test_set.dataset.images_path[idx])
                 
+                img_file = os.path.basename(test_set.dataset.images_path[idx])
+                txt_file = img_file.replace(".jpg", ".txt")
+                
+                gt_txt_file = os.path.join("gt", txt_file)
+                pred_txt_file = os.path.join("pred", txt_file)
+                
+                with open(gt_txt_file, "w") as f:
+                    for target_bbox in target_bboxes:
+                        c = int(target_bbox[0])
+                        l = (target_bbox[1] - target_bbox[3] / 2.)
+                        r = (target_bbox[1] + target_bbox[3] / 2.)
 
-                if pred_bboxes["num_detected_bboxes"] > 0:
-                    pred_bboxes = np.concatenate([pred_bboxes["class"].reshape(-1, 1), 
-                                                pred_bboxes["position"].reshape(-1, 4),
-                                                pred_bboxes["confidence"].reshape(-1, 1)], axis=1)
-         
-                    class_tp_fp_score = metric.measure_tpfp(pred_bboxes, target_bboxes, 0.5, bbox_format='cxcywh')
-                    class_tp_fp_score_batch.append(class_tp_fp_score)
-                    for pred_bbox in pred_bboxes:
-                        # if pred_bbox[-1] < .1:
-                        #     continue
+                        t = (target_bbox[2] - target_bbox[4] / 2.)
+                        b = (target_bbox[2] + target_bbox[4] / 2.)
                         
-                        # print(pred_bbox[-1])
+                        f.write(f"{voc0712.CLASSES[c]} {l} {t} {r} {b}\n")
                         
-                        #pred_bbox = pred_bbox.astype(np.int32)
-                        
-                        l = int(pred_bbox[1] - pred_bbox[3] / 2.)
-                        r = int(pred_bbox[1] + pred_bbox[3] / 2.)
+                with open(pred_txt_file, "w") as f:
+                    if pred_bboxes["num_detected_bboxes"] > 0:
+                        pred_bboxes = np.concatenate([pred_bboxes["class"].reshape(-1, 1), 
+                                                    pred_bboxes["position"].reshape(-1, 4),
+                                                    pred_bboxes["confidence"].reshape(-1, 1)], axis=1)
+            
+                        class_tp_fp_score = metric.measure_tpfp(pred_bboxes, target_bboxes, 0.5, bbox_format='cxcywh')
+                        class_tp_fp_score_batch.append(class_tp_fp_score)
+                        for pred_bbox in pred_bboxes:
+                            c = int(pred_bbox[0])
+                            
+                            l = (pred_bbox[1] - pred_bbox[3] / 2.)
+                            r = (pred_bbox[1] + pred_bbox[3] / 2.)
 
-                        t = int(pred_bbox[2] - pred_bbox[4] / 2.)
-                        b = int(pred_bbox[2] + pred_bbox[4] / 2.)
+                            t = (pred_bbox[2] - pred_bbox[4] / 2.)
+                            b = (pred_bbox[2] + pred_bbox[4] / 2.)
+                            
+                            confidence = pred_bbox[5]
+                            
+                            f.write(f"{voc0712.CLASSES[c]} {confidence} {l} {t} {r} {b}\n")
 
-                        cv2.rectangle(img=img, pt1=(l, t), pt2=(r, b), color=(0, 255, 0), thickness=3)
+                            cv2.rectangle(img=img, pt1=(int(l), int(t)), pt2=(int(r), int(b)), color=(255, 0, 0), thickness=3)
 
-                cv2.imshow('img', img)
-                cv2.waitKey(1)
+                    cv2.imshow('img', img)
+                    cv2.waitKey(1)
                 
         mean_ap = metric.compute_map(class_tp_fp_score_batch, gt_bboxes_batch, num_classes=model.num_classes)
         print(mean_ap)
