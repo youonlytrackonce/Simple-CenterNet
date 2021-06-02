@@ -79,3 +79,7 @@ python eval.py --weights your_model.pth --flip
 ```
 
 ### COCO17
+
+## Things we tried that didn't work
+
+- Random Rotation Augmentation
