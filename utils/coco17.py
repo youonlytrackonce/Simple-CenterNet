@@ -95,5 +95,4 @@ class COCODetection(object):
     
     def __len__(self):
         return len(self.labels)
-
-dataset = COCODetection(root="../dataset/coco17")
+    
