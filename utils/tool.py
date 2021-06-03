@@ -4,6 +4,8 @@ import random
 import os
 import shutil
 
+DATASET_NUM_CLASSES = {"voc": 20, "coco": 80}
+
 def setup_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)

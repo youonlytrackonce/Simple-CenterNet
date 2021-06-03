@@ -30,7 +30,8 @@ if __name__ == "__main__":
     tool.mkdir(dir=opt.save_folder, remove_existing_dir=False)
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = centernet.CenterNet(pretrained_backbone=True)
+
+    model = centernet.CenterNet(num_classes=tool.DATASET_NUM_CLASSES[opt.dataset_name], pretrained_backbone=True)
     model = model.to(device=device)
     
     training_set = dataset.DetectionDataset(root=opt.root, 

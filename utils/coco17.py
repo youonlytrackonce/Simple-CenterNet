@@ -17,15 +17,15 @@ PAPER_91CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane',
 'backpack', 'umbrella', 'empty', 'empty', 'handbag', 'tie', 'suitcase',
 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 
 'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle',
-'empty', 'wine glasses', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana',
+'empty', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana',
 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut',
 'cake', 'chair', 'couch', 'potted plant', 'bed', 'empty', 'dining table', 'empty',
 'empty', 'toilet', 'empty', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 
 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'empty', 'book', 'clock', 'vase',
 'scissors', 'teddy bear', 'hair drier', 'toothbrush', 'empty')
 
-RELEASED_80CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-           'train', 'truck', 'boat', 'traffic light', 'fire', 'hydrant',
+CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+           'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
            'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
            'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra',
            'giraffe', 'backpack', 'umbrella', 'handbag', 'tie',
@@ -36,9 +36,11 @@ RELEASED_80CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus
            'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
            'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed',
            'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
-           'keyboard', 'cell phone', 'microwave oven', 'toaster', 'sink',
+           'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
            'refrigerator', 'book', 'clock', 'vase', 'scissors',
            'teddy bear', 'hair drier', 'toothbrush') # https://tech.amikelive.com/node-718/what-object-categories-labels-are-in-coco-dataset/
+
+RELEASED_80CLASSES = CLASSES
 
 # len(CLASSES) = 80
 # 원래 coco paper(Microsoft COCO: Common Objects in Context) 에서 소개하기를 91개의 클래스가 포함돼있다 했는데
@@ -61,7 +63,7 @@ class COCODetection(object):
             image_path, label = self.read_coco_data(id)
             self.images_path.append(image_path)
             self.labels.append(label)
-    
+
     def read_coco_data(self, id):
         image_info = self.coco.loadImgs(id)[0]
         image_path = os.path.join(self.root, self.image_set, image_info['file_name'])
@@ -95,4 +97,3 @@ class COCODetection(object):
     
     def __len__(self):
         return len(self.labels)
-    

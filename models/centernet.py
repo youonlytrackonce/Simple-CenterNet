@@ -48,11 +48,12 @@ class Upsamling(nn.Module):
         return x
     
 class CenterNet(nn.Module):
-    def __init__(self, 
+    def __init__(self,
+                 num_classes=20,
                  pretrained_backbone=True):
         super(CenterNet, self).__init__()
         
-        self.num_classes = 20
+        self.num_classes = num_classes
         self.stride = 4
         
         self.backbone = resnet18(pretrained=pretrained_backbone)

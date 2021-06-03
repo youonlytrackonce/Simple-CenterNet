@@ -1,10 +1,10 @@
 from . import voc0712
+from . import coco17
 from . import transforms
 
 import cv2
 import numpy as np
 import torch 
-import torchvision.transforms
 from torch.utils.data import Dataset
 
 
@@ -31,7 +31,12 @@ class DetectionDataset(Dataset):  # for training/testing
                                                 image_sets, 
                                                 keep_difficult=keep_difficult)
         elif dataset_name == "coco":
-            pass
+            if set == "train":
+                image_set = "train2017"
+            elif set == "test":
+                image_set = "val2017"
+            self.dataset = coco17.COCODetection(root, 
+                                                image_set)
         elif dataset_name == "custom":
             pass
         
