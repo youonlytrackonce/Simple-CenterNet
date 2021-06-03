@@ -56,10 +56,12 @@ cd Simple-CenterNet
 if (your_os == 'Window'):
 ```
 scripts/download-voc0712.bat
+scripts/download-coco17.bat
 ```
 else:
 ```
 scripts/download-voc0712.sh
+scripts/download-coco17.sh
 ```
 
 ## Training
