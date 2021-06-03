@@ -18,9 +18,12 @@ def get_lr(optimizer):
         return param_group['lr']
 
 def mkdir(dir, remove_existing_dir=False):
-    if os.path.isdir(dir) and remove_existing_dir:
-        shutil.rmtree(dir)
-    os.makedirs(dir)
+    if os.path.isdir(dir):
+        if remove_existing_dir:
+            shutil.rmtree(dir)
+            os.makedirs(dir)
+    else:
+        os.makedirs(dir)
 
 def reconstruct_bboxes(normalized_bboxes, resized_img_shape, padded_ltrb, org_img_shape):
     normalized_bboxes[:, [1, 3]] *= resized_img_shape[0]
