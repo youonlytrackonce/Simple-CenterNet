@@ -39,9 +39,7 @@ if __name__ == "__main__":
                                             img_w=opt.img_w, img_h=opt.img_h,
                                             use_augmentation=True,
                                             keep_ratio=True)
-    
-    num_training_set_imgs = len(training_set)
-    
+
     training_set_loader = torch.utils.data.DataLoader(training_set, 
                                                       opt.batch_size,
                                                       num_workers=opt.num_workers,
@@ -50,13 +48,13 @@ if __name__ == "__main__":
                                                       pin_memory=True,
                                                       drop_last=True)
     
-    initial_lr = 5e-4 * (opt.batch_size/128.)
+    initial_lr = 5e-4 * (opt.batch_size/128)
     optimizer = torch.optim.Adam(model.parameters(), lr=initial_lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = 0.
     
-    iterations_per_epoch = num_training_set_imgs // opt.batch_size 
-    total_iteration = iterations_per_epoch * opt.total_epoch
+    iterations_per_epoch = tool.get_iterations_per_epoch(training_set, opt.batch_size)
+    total_iteration =  iterations_per_epoch * opt.total_epoch
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_iteration)
     warmup_iteration = 1000
@@ -64,15 +62,13 @@ if __name__ == "__main__":
     writer = SummaryWriter()
     
     start_epoch = 0
-    if len(opt.weights) == 0:
-            pass
-    else:
+    if os.path.isfile(opt.weights):
         checkpoint = torch.load(opt.weights)
         start_epoch = checkpoint['epoch'] + 1
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        
+
     for epoch in range(start_epoch, opt.total_epoch):
         model.train()
         for i, batch_data in enumerate(training_set_loader):
