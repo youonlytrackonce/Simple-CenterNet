@@ -25,6 +25,9 @@ def mkdir(dir, remove_existing_dir=False):
     else:
         os.makedirs(dir)
 
+def get_iterations_per_epoch(training_set, batch_size):
+    return len(training_set) // batch_size
+    
 def reconstruct_bboxes(normalized_bboxes, resized_img_shape, padded_ltrb, org_img_shape):
     normalized_bboxes[:, [1, 3]] *= resized_img_shape[0]
     normalized_bboxes[:, [2, 4]] *= resized_img_shape[1]
