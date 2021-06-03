@@ -17,8 +17,8 @@ def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
 
-def mkdir(dir):
-    if os.path.isdir(dir):
+def mkdir(dir, remove_existing_dir=False):
+    if os.path.isdir(dir) and remove_existing_dir:
         shutil.rmtree(dir)
     os.makedirs(dir)
 

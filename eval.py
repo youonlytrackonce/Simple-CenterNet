@@ -51,8 +51,8 @@ if __name__ == "__main__":
                                                   pin_memory=True,
                                                   drop_last=False)
     
-    tool.mkdir("gt")
-    tool.mkdir("pred")
+    tool.mkdir(dir="gt", remove_existing_dir=True)
+    tool.mkdir(dir="pred", remove_existing_dir=True)
         
     gt_bboxes_batch = []
     class_tp_fp_score_batch = []

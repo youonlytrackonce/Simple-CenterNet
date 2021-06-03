@@ -9,7 +9,7 @@ import argparse
 import os
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='YOLO-v3 tiny Detection')
+    parser = argparse.ArgumentParser()
     parser.add_argument('--batch-size', default=32, type=int,
                         help='Batch size for training')
 
@@ -27,8 +27,7 @@ if __name__ == "__main__":
     opt = parser.parse_args()
     tool.setup_seed(opt.seed)
     
-    if not os.path.exists(opt.save_folder):
-        os.mkdir(opt.save_folder)
+    tool.mkdir(dir=opt.save_folder, remove_existing_dir=False)
     
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = centernet.CenterNet(pretrained_backbone=True)
