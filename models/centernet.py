@@ -188,7 +188,6 @@ class CenterNet(nn.Module):
         batch_loss_h = torch.tensor(0., dtype=torch.float32, device=device)
         batch_loss_class_heatmap = torch.tensor(0., dtype=torch.float32, device=device)
         
-        
         for idx in range(batch_size):
             pred = batch_pred[idx]
             
@@ -213,6 +212,9 @@ class CenterNet(nn.Module):
                 
                 bbox_fcx, bbox_fcy, bbox_w, bbox_h = bbox[1:]
                 bbox_icx, bbox_icy = int(bbox_fcx), int(bbox_fcy)
+                
+                if bbox_w * self.stride < 3. or bbox_h * self.stride < 3.:
+                    continue
                 
                 num_positive_samples += 1.
                 
