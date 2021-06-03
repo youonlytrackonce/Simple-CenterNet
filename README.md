@@ -9,7 +9,7 @@ PyTorch Implementation of CenterNet([Object as Points](https://arxiv.org/abs/190
 
 |Repo| Backbone     | 0.5 mAP    | Trained model    |  
 |:------------:|:-------:|:-------:|:-----------------:|  
-|**This Repo**|ResNet-18|  77.6      |   |  
+|**This Repo**|ResNet-18|  77.6      |  [google drive link](https://drive.google.com/file/d/1lCCBXoQFIeHummKORoh_qukQl3yRV8Pb/view?usp=sharing) |  
 |[xingyizhou/CenterNet](https://github.com/xingyizhou/CenterNet)|ResNet-18|75.6      |   |  
 |[Ximilar-com/xcenternet](https://github.com/Ximilar-com/xcenternet)|ResNet-18     |  70.0      | |
 |[xuannianz/keras-CenterNet](https://github.com/xuannianz/keras-CenterNet)|**ResNet-50**    |  72.9      | |
