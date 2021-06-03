@@ -77,9 +77,8 @@ class VOCDetection(object):
             if not class_name in CLASSES:
                 continue
             
-            class_index = CLASSES.index(class_name)
+            class_idx = CLASSES.index(class_name)
 
-            
             bbox = obj.find("bndbox")
             
             xmin = int(bbox.find("xmin").text)
@@ -92,7 +91,7 @@ class VOCDetection(object):
             w = (xmax - xmin)/img_w
             h = (ymax - ymin)/img_h
             
-            label.append([class_index, cx, cy, w, h])
+            label.append([class_idx, cx, cy, w, h])
         
         label = np.array(label).reshape(-1, 5)
         label[:, 1:] = np.clip(label[:, 1:], a_min=0., a_max=1.)
