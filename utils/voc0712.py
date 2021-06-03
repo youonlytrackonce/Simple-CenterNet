@@ -1,6 +1,7 @@
 """VOC Dataset Classes
 
 Original author: Yonghye Kwon
+https://github.com/developer0hye
 """
 import cv2
 import numpy as np

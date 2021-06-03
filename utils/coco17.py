@@ -1,10 +1,30 @@
+"""VOC Dataset Classes
+
+Original author: Yonghye Kwon
+https://github.com/developer0hye
+"""
+
 import cv2
 import numpy as np
 
 import os
 from pycocotools.coco import COCO
 
-CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+PAPER_91CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane',
+'bus', 'train', 'truck', 'boat', 'traffic light', 'fire hydrant',
+'empty', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
+'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe', 'empty',
+'backpack', 'umbrella', 'empty', 'empty', 'handbag', 'tie', 'suitcase',
+'frisbee', 'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 
+'baseball glove', 'skateboard', 'surfboard', 'tennis racket', 'bottle',
+'empty', 'wine glasses', 'cup', 'fork', 'knife', 'spoon', 'bowl', 'banana',
+'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza', 'donut',
+'cake', 'chair', 'couch', 'potted plant', 'bed', 'empty', 'dining table', 'empty',
+'empty', 'toilet', 'empty', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone', 
+'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'empty', 'book', 'clock', 'vase',
+'scissors', 'teddy bear', 'hair drier', 'toothbrush', 'empty')
+
+RELEASED_80CLASSES = ('person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
            'train', 'truck', 'boat', 'traffic light', 'fire', 'hydrant',
            'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog',
            'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra',
@@ -48,24 +68,30 @@ class COCODetection(object):
         
         img_h, img_w = image_info['height'], image_info['width']
         target = self.coco.imgToAnns[id] # dictonary 를 원소로 갖는 list
-        
+
+        label = []
         for obj in target:
             if 'bbox' in obj:
                 bbox = obj['bbox'] #xywh, xy is top left point
-                
+                class_name = PAPER_91CLASSES[obj['category_id']-1]# obj['category_id'] 1-based indexing
+                class_idx = RELEASED_80CLASSES.index(class_name)
+
                 bbox_cx = (bbox[0] + bbox[2] / 2.) / img_w
                 bbox_cy = (bbox[1] + bbox[3] / 2.) / img_h
                 bbox_w = bbox[2] / img_w
                 bbox_h = bbox[3] / img_h
                 
-                class_idx = 
+                label.append([class_idx, bbox_cx, bbox_cy, bbox_w, bbox_h])
+
+        label = np.array(label).reshape(-1, 5)
+        label[:, 1:] = np.clip(label[:, 1:], a_min=0., a_max=1.)
+        return image_path, label
         
-        # exit()
-        return image_path, target
         
-        
-    def __getitem__(self, index):
-        pass
+    def __getitem__(self, idx):
+        img = cv2.imread(self.images_path[idx], cv2.IMREAD_COLOR)
+        label = self.labels[idx].copy()
+        return img, label
     
     def __len__(self):
         return len(self.labels)
