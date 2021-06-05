@@ -3,8 +3,7 @@ import numpy as np
 import random
 import os
 import shutil
-
-DATASET_NUM_CLASSES = {"voc": 20, "coco": 80}
+import yaml
 
 def setup_seed(seed):
     torch.manual_seed(seed)
@@ -18,6 +17,12 @@ def setup_seed(seed):
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
+
+def parse_yaml(file_path):
+    with open(file_path) as f:
+        yaml_data = yaml.load(f, Loader=yaml.FullLoader)
+        return yaml_data
+
 
 def mkdir(dir, remove_existing_dir=False):
     if os.path.isdir(dir):

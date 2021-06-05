@@ -68,7 +68,7 @@ scripts/download-coco17.sh
 
 ### VOC07+12
 ```
-python train.py --batch-size 32 --total-epoch 70
+python train.py --data voc0712.yaml --batch-size 32 --total-epoch 70
 ```
 
 ### COCO17
@@ -77,7 +77,7 @@ python train.py --batch-size 32 --total-epoch 70
 
 ### VOC07+12
 ```
-python eval.py --weights your_model.pth --flip
+python eval.py --data voc0712.yaml --weights your_model.pth --flip
 ```
 
 ### COCO17

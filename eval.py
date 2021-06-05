@@ -1,7 +1,7 @@
 from models import centernet
 from utils import dataset
 from utils import voc0712
-from utils import tool
+from utils import common
 from evaluation import metric
 
 import numpy as np
@@ -21,14 +21,17 @@ if __name__ == "__main__":
     parser.add_argument('--img-h', default=512, type=int)
 
     parser.add_argument('--weights', type=str, default="", help='load weights to resume training')
-    parser.add_argument('--root', default="./dataset/VOCDevkit", help='Location of dataset directory')
-    parser.add_argument('--dataset-name', type=str, default="voc")
+    parser.add_argument('--data', type=str, default="voc0712.yaml")
     parser.add_argument('--num-workers', default=8, type=int, help='Number of workers used in dataloading')
     parser.add_argument('--flip', action='store_true')
     
     opt = parser.parse_args()
+    common.mkdir(dir="gt", remove_existing_dir=True)
+    common.mkdir(dir="pred", remove_existing_dir=True)
     
+    dataset_dict = common.parse_yaml(opt.data)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    
     model = centernet.CenterNet(pretrained_backbone=True)
     if opt.weights is not None:
         chkpt = torch.load(opt.weights, map_location=device)
@@ -36,8 +39,8 @@ if __name__ == "__main__":
     model.eval()
     model = model.to(device=device)
     
-    test_set = dataset.DetectionDataset(root=opt.root, 
-                                        dataset_name=opt.dataset_name, 
+    test_set = dataset.DetectionDataset(root=dataset_dict['root'], 
+                                        dataset_name=dataset_dict['dataset_name'], 
                                         set="test",
                                         img_w=opt.img_w, 
                                         img_h=opt.img_h,
@@ -50,9 +53,6 @@ if __name__ == "__main__":
                                                   collate_fn=dataset.collate_fn,
                                                   pin_memory=True,
                                                   drop_last=False)
-    
-    tool.mkdir(dir="gt", remove_existing_dir=True)
-    tool.mkdir(dir="pred", remove_existing_dir=True)
         
     gt_bboxes_batch = []
     class_tp_fp_score_batch = []
@@ -77,7 +77,7 @@ if __name__ == "__main__":
                 target_bboxes = batch_label[i]#.numpy()
 
                 pred_bboxes = batch_output[i]
-                target_bboxes = tool.reconstruct_bboxes(normalized_bboxes=target_bboxes,
+                target_bboxes = common.reconstruct_bboxes(normalized_bboxes=target_bboxes,
                                                         resized_img_shape=(model.img_w, model.img_h),
                                                         padded_ltrb=padded_ltrb,
                                                         org_img_shape=org_img_shape)
@@ -102,7 +102,7 @@ if __name__ == "__main__":
                         t = (target_bbox[2] - target_bbox[4] / 2.)
                         b = (target_bbox[2] + target_bbox[4] / 2.)
                         
-                        f.write(f"{voc0712.CLASSES[c]} {l} {t} {r} {b}\n")
+                        f.write(f"{dataset_dict['classes'][c]} {l} {t} {r} {b}\n")
                         
                 with open(pred_txt_file, "w") as f:
                     if pred_bboxes["num_detected_bboxes"] > 0:
@@ -123,7 +123,7 @@ if __name__ == "__main__":
                             
                             confidence = pred_bbox[5]
                             
-                            f.write(f"{voc0712.CLASSES[c]} {confidence} {l} {t} {r} {b}\n")
+                            f.write(f"{dataset_dict['classes'][c]} {confidence} {l} {t} {r} {b}\n")
 
                             cv2.rectangle(img=img, pt1=(int(l), int(t)), pt2=(int(r), int(b)), color=(255, 0, 0), thickness=3)
 
