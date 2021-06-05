@@ -1,6 +1,6 @@
 from .resnet import *
 from .dcn import *
-from utils import tool
+from utils import common
 
 import numpy as np
 import math
@@ -161,7 +161,7 @@ class CenterNet(nn.Module):
                 if torch.count_nonzero(confidence_mask) > 0:
                     
                     bboxes = bboxes[confidence_mask]
-                    bboxes = tool.reconstruct_bboxes(normalized_bboxes=bboxes,
+                    bboxes = common.reconstruct_bboxes(normalized_bboxes=bboxes,
                                                      resized_img_shape=(self.img_w, self.img_h),
                                                      padded_ltrb=padded_ltrb,
                                                      org_img_shape=org_img_shape)
