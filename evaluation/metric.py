@@ -202,9 +202,8 @@ def compute_map(class_tp_fp_score, gt_bboxes, num_classes):
     ap, _, _ = compute_ap(class_tp_fp_score[class_tp_fp_score[:, 0] == c, 1:], gt_bboxes[gt_bboxes[:, 0] == c, 1:])
     ap_per_class[c] = ap
 
-  print(ap_per_class)
   mean_ap = np.mean(ap_per_class)
-  return mean_ap
+  return mean_ap, ap_per_class
 
 if __name__ == '__main__':
     num_classes = 1

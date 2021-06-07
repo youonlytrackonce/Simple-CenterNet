@@ -32,7 +32,7 @@ if __name__ == "__main__":
     dataset_dict = common.parse_yaml(opt.data)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
-    model = centernet.CenterNet(pretrained_backbone=True)
+    model = centernet.CenterNet(num_classes=len(dataset_dict['classes']), pretrained_backbone=True)
     if opt.weights is not None:
         chkpt = torch.load(opt.weights, map_location=device)
         model.load_state_dict(chkpt['model_state_dict'], strict=False)
@@ -93,17 +93,8 @@ if __name__ == "__main__":
                 gt_txt_file = os.path.join("gt", txt_file)
                 pred_txt_file = os.path.join("pred", txt_file)
                 
-                with open(gt_txt_file, "w") as f:
-                    for target_bbox in target_bboxes:
-                        c = int(target_bbox[0])
-                        l = (target_bbox[1] - target_bbox[3] / 2.)
-                        r = (target_bbox[1] + target_bbox[3] / 2.)
-
-                        t = (target_bbox[2] - target_bbox[4] / 2.)
-                        b = (target_bbox[2] + target_bbox[4] / 2.)
-                        
-                        f.write(f"{dataset_dict['classes'][c]} {l} {t} {r} {b}\n")
-                        
+                common.write_bboxes(gt_txt_file, img, target_bboxes, dataset_dict['classes'], draw_rect=False)
+  
                 with open(pred_txt_file, "w") as f:
                     if pred_bboxes["num_detected_bboxes"] > 0:
                         pred_bboxes = np.concatenate([pred_bboxes["class"].reshape(-1, 1), 
@@ -112,23 +103,14 @@ if __name__ == "__main__":
             
                         class_tp_fp_score = metric.measure_tpfp(pred_bboxes, target_bboxes, 0.5, bbox_format='cxcywh')
                         class_tp_fp_score_batch.append(class_tp_fp_score)
-                        for pred_bbox in pred_bboxes:
-                            c = int(pred_bbox[0])
-                            
-                            l = (pred_bbox[1] - pred_bbox[3] / 2.)
-                            r = (pred_bbox[1] + pred_bbox[3] / 2.)
-
-                            t = (pred_bbox[2] - pred_bbox[4] / 2.)
-                            b = (pred_bbox[2] + pred_bbox[4] / 2.)
-                            
-                            confidence = pred_bbox[5]
-                            
-                            f.write(f"{dataset_dict['classes'][c]} {confidence} {l} {t} {r} {b}\n")
-
-                            cv2.rectangle(img=img, pt1=(int(l), int(t)), pt2=(int(r), int(b)), color=(255, 0, 0), thickness=3)
-
+                        
+                        common.write_bboxes(pred_txt_file, img, pred_bboxes, dataset_dict['classes'], draw_rect=True)
+                        
                     cv2.imshow('img', img)
                     cv2.waitKey(1)
                 
-        mean_ap = metric.compute_map(class_tp_fp_score_batch, gt_bboxes_batch, num_classes=model.num_classes)
-        print(mean_ap)
+        mean_ap, ap_per_class = metric.compute_map(class_tp_fp_score_batch, gt_bboxes_batch, num_classes=model.num_classes)
+        for i in range(len(dataset_dict['classes'])):
+            print("Class: ", dataset_dict['classes'][i], ", AP: ", np.round(ap_per_class[i], decimals=4))
+        print("mAP: ", np.round(mean_ap, decimals=4))
+        

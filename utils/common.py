@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import cv2
 import random
 import os
 import shutil
@@ -23,6 +24,24 @@ def parse_yaml(file_path):
         yaml_data = yaml.load(f, Loader=yaml.FullLoader)
         return yaml_data
 
+def write_bboxes(file, img, bboxes, classes_table, draw_rect=False):
+    with open(file, "w") as f:
+        for bbox in bboxes:
+            c = int(bbox[0])
+            l = (bbox[1] - bbox[3] / 2.)
+            r = (bbox[1] + bbox[3] / 2.)
+
+            t = (bbox[2] - bbox[4] / 2.)
+            b = (bbox[2] + bbox[4] / 2.)
+            
+            if len(bbox) == 5:                
+                f.write(f"{classes_table[c]} {l} {t} {r} {b}\n")
+            else:
+                confidence = bbox[5]
+                f.write(f"{classes_table[c]} {confidence} {l} {t} {r} {b}\n")
+            
+            if draw_rect:
+                cv2.rectangle(img=img, pt1=(int(l), int(t)), pt2=(int(r), int(b)), color=(255, 0, 0), thickness=3)
 
 def mkdir(dir, remove_existing_dir=False):
     if os.path.isdir(dir):
