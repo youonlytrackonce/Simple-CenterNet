@@ -1,6 +1,5 @@
 from models import centernet
-from utils import dataset
-from utils import voc0712
+from data import dataset
 from utils import common
 from evaluation import metric
 
@@ -10,7 +9,6 @@ import cv2
 
 import argparse
 import os
-import shutil
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='CenterNet Detection')

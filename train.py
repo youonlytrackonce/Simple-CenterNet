@@ -1,6 +1,6 @@
 from models import centernet
 from utils import common
-from utils import dataset
+from data import dataset
 
 import torch
 from torch.utils.tensorboard import SummaryWriter
