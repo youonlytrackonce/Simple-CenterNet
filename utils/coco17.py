@@ -64,6 +64,8 @@ class COCODetection(object):
             self.images_path.append(image_path)
             self.labels.append(label)
 
+        print("cache")
+        
     def read_coco_data(self, id):
         image_info = self.coco.loadImgs(id)[0]
         image_path = os.path.join(self.root, self.image_set, image_info['file_name'])
@@ -82,7 +84,11 @@ class COCODetection(object):
                 bbox_cy = (bbox[1] + bbox[3] / 2.) / img_h
                 bbox_w = bbox[2] / img_w
                 bbox_h = bbox[3] / img_h
+                bbox_area = bbox_w * bbox_h
                 
+                if bbox_area == 0:
+                    continue
+
                 label.append([class_idx, bbox_cx, bbox_cy, bbox_w, bbox_h])
 
         label = np.array(label).reshape(-1, 5)
