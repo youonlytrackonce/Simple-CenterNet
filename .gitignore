@@ -4,3 +4,5 @@ dataset/
 weights*/
 *.pth
 *.onnx
+pred/
+gt/
