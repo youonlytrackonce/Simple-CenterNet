@@ -31,21 +31,7 @@ if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     
     model = centernet.CenterNet(num_classes=len(dataset_dict['classes']), pretrained_backbone=True)
-    if opt.weights is not None:
-        from collections import OrderedDict
-        chkpt = torch.load(opt.weights, map_location=device)
-        
-        keys = chkpt['model_state_dict'].keys()
-        values = chkpt['model_state_dict'].values()
-        
-        new_keys = []
-        
-        for key in keys:
-          new_key = key if not 'module' in key else key[7:]
-          new_keys.append(new_key)
-        
-        new_dict = OrderedDict(list(zip(new_keys, values)))
-        model.load_state_dict(new_dict)
+    common.load_only_model_weights(model=model, weights_path=opt.weights, device=device)
         
     model.eval()
     model = model.to(device=device)

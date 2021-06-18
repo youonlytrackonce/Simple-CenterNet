@@ -15,6 +15,23 @@ def setup_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
 
+def load_only_model_weights(model, weights_path, device):
+    if weights_path is not None:
+        from collections import OrderedDict
+        chkpt = torch.load(weights_path, map_location=device)
+        
+        keys = chkpt['model_state_dict'].keys()
+        values = chkpt['model_state_dict'].values()
+        
+        new_keys = []
+        
+        for key in keys:
+            new_key = key if not 'module' in key else key[7:]
+            new_keys.append(new_key)
+        
+        new_dict = OrderedDict(list(zip(new_keys, values)))
+        model.load_state_dict(new_dict)
+
 def get_lr(optimizer):
     for param_group in optimizer.param_groups:
         return param_group['lr']
