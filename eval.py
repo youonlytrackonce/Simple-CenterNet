@@ -32,8 +32,21 @@ if __name__ == "__main__":
     
     model = centernet.CenterNet(num_classes=len(dataset_dict['classes']), pretrained_backbone=True)
     if opt.weights is not None:
+        from collections import OrderedDict
         chkpt = torch.load(opt.weights, map_location=device)
-        model.load_state_dict(chkpt['model_state_dict'], strict=False)
+        
+        keys = chkpt['model_state_dict'].keys()
+        values = chkpt['model_state_dict'].values()
+        
+        new_keys = []
+        
+        for key in keys:
+          new_key = key if not 'module' in key else key[7:]
+          new_keys.append(new_key)
+        
+        new_dict = OrderedDict(list(zip(new_keys, values)))
+        model.load_state_dict(new_dict)
+        
     model.eval()
     model = model.to(device=device)
     
@@ -104,8 +117,8 @@ if __name__ == "__main__":
                         
                         common.write_bboxes(pred_txt_file, img, pred_bboxes, dataset_dict['classes'], draw_rect=True)
                         
-                    cv2.imshow('img', img)
-                    cv2.waitKey(1)
+                    #cv2.imshow('img', img)
+                    #cv2.waitKey(1)
                 
         mean_ap, ap_per_class = metric.compute_map(class_tp_fp_score_batch, gt_bboxes_batch, num_classes=model.num_classes)
         for i in range(len(dataset_dict['classes'])):
