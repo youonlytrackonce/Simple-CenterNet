@@ -10,9 +10,9 @@ import os
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--batch-size', default=32, type=int,
-                        help='Batch size for training')
-
+    parser.add_argument('--step-batch-size', default=32, type=int, help='Batch size for step(optimization)')
+    parser.add_argument('--forward-batch-size', default=32, type=int, help='Batch size for forward')
+    
     parser.add_argument('--img-w', default=512, type=int)
     parser.add_argument('--img-h', default=512, type=int)
 
@@ -42,19 +42,20 @@ if __name__ == "__main__":
                                             keep_ratio=True)
 
     training_set_loader = torch.utils.data.DataLoader(training_set, 
-                                                      opt.batch_size,
+                                                      opt.forward_batch_size,
                                                       num_workers=opt.num_workers,
                                                       shuffle=True,
                                                       collate_fn=dataset.collate_fn,
                                                       pin_memory=True,
                                                       drop_last=True)
-    
-    initial_lr = 5e-4 * (opt.batch_size/128)
+
+    iters_to_accumulate = max(round(opt.step_batch_size/opt.forward_batch_size), 1)
+    initial_lr = 5e-4 * (opt.step_batch_size/128)
     optimizer = torch.optim.Adam(model.parameters(), lr=initial_lr)
     for param_group in optimizer.param_groups:
         param_group['lr'] = 0.
     
-    iterations_per_epoch = common.get_iterations_per_epoch(training_set, opt.batch_size)
+    iterations_per_epoch = common.get_iterations_per_epoch(training_set, opt.forward_batch_size)
     total_iteration =  iterations_per_epoch * opt.total_epoch
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_iteration)
@@ -89,10 +90,13 @@ if __name__ == "__main__":
             writer.add_scalar('train/lr', common.get_lr(optimizer), n_iteration)
 
             #backword
+            loss = loss / iters_to_accumulate
             loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
             
+            if (n_iteration + 1) % iters_to_accumulate == 0:
+                optimizer.step()
+                optimizer.zero_grad()
+
             if n_iteration > warmup_iteration:
                 scheduler.step()
             else:
