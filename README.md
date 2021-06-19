@@ -67,9 +67,13 @@ scripts/download-coco17.sh
 ## Training
 
 ### VOC07+12
+
 ```
-python train.py --data ./data/voc0712.yaml --batch-size 32 --total-epoch 70
+python train.py --data ./data/voc0712.yaml --step-batch-size 32 --forward-batch-size 32 --total-epoch 70
 ```
+
+If your gpu memory is too lower to train the model, you should try to reduce forward-batch-size.
+
 
 ### COCO17
 
