@@ -177,16 +177,17 @@ class CenterNet(nn.Module):
    
     def compute_loss(self, batch_pred, batch_label):
         batch_size, _, heatmap_h, heatmap_w = batch_pred.shape
+        dtype = batch_pred.dtype
         device = batch_pred.device
         
         loss_offset_xy_function = nn.L1Loss(reduction='sum')
         loss_wh_function = nn.L1Loss(reduction='sum')
         
-        batch_loss_offset_x = torch.tensor(0., dtype=torch.float32, device=device)
-        batch_loss_offset_y = torch.tensor(0., dtype=torch.float32, device=device)
-        batch_loss_w = torch.tensor(0., dtype=torch.float32, device=device)
-        batch_loss_h = torch.tensor(0., dtype=torch.float32, device=device)
-        batch_loss_class_heatmap = torch.tensor(0., dtype=torch.float32, device=device)
+        batch_loss_offset_x = torch.tensor(0., dtype=dtype, device=device)
+        batch_loss_offset_y = torch.tensor(0., dtype=dtype, device=device)
+        batch_loss_w = torch.tensor(0., dtype=dtype, device=device)
+        batch_loss_h = torch.tensor(0., dtype=dtype, device=device)
+        batch_loss_class_heatmap = torch.tensor(0., dtype=dtype, device=device)
         
         for idx in range(batch_size):
             pred = batch_pred[idx]
@@ -202,10 +203,10 @@ class CenterNet(nn.Module):
 
             num_positive_samples = 0
             
-            loss_offset_x = torch.tensor(0., dtype=torch.float32, device=device)
-            loss_offset_y = torch.tensor(0., dtype=torch.float32, device=device)
-            loss_w = torch.tensor(0., dtype=torch.float32, device=device)
-            loss_h = torch.tensor(0., dtype=torch.float32, device=device)
+            loss_offset_x = torch.tensor(0., dtype=dtype, device=device)
+            loss_offset_y = torch.tensor(0., dtype=dtype, device=device)
+            loss_w = torch.tensor(0., dtype=dtype, device=device)
+            loss_h = torch.tensor(0., dtype=dtype, device=device)
 
             for bbox in label:
                 bbox_class = int(bbox[0])

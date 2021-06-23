@@ -3,6 +3,7 @@ from utils import common
 from data import dataset
 
 import torch
+import torch.cuda.amp
 from torch.utils.tensorboard import SummaryWriter
 
 import argparse
@@ -60,8 +61,7 @@ if __name__ == "__main__":
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_iteration)
     warmup_iteration = 1000
-    
-    writer = SummaryWriter()
+    scaler = torch.cuda.amp.GradScaler()
     
     start_epoch = 0
     if os.path.isfile(opt.weights):
@@ -70,18 +70,22 @@ if __name__ == "__main__":
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        scaler.load_state_dict(checkpoint['scaler_state_dict'])
     
+    writer = SummaryWriter()
     for epoch in range(start_epoch, opt.total_epoch):
         model.train()
         for i, batch_data in enumerate(training_set_loader):
+            
             n_iteration = (iterations_per_epoch * epoch) + i
             
             batch_img = batch_data["img"].to(device)
             batch_label = batch_data["label"]
             
             #forward
-            batch_output = model(batch_img)
-            loss, losses = model.compute_loss(batch_output, batch_label)
+            with torch.cuda.amp.autocast():
+                batch_output = model(batch_img)
+                loss, losses = model.compute_loss(batch_output, batch_label)
             
             writer.add_scalar('train/loss_offset_xy', losses[0].item(), n_iteration)
             writer.add_scalar('train/loss_wh', losses[1].item(), n_iteration)
@@ -91,10 +95,11 @@ if __name__ == "__main__":
 
             #backword
             loss = loss / iters_to_accumulate
-            loss.backward()
-            
+            scaler.scale(loss).backward()
+
             if (n_iteration + 1) % iters_to_accumulate == 0:
-                optimizer.step()
+                scaler.step(optimizer)
+                scaler.update()
                 optimizer.zero_grad()
 
             if n_iteration > warmup_iteration:
@@ -109,6 +114,7 @@ if __name__ == "__main__":
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict' : optimizer.state_dict(),
         'scheduler_state_dict' : scheduler.state_dict(),
+        'scaler_state_dict' : scaler.state_dict(),
         'mAP': 0.,
         'best_mAP': 0.
         }
