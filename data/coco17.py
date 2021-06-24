@@ -1,4 +1,4 @@
-"""VOC Dataset Classes
+"""COCO Dataset Classes
 
 Original author: Yonghye Kwon
 https://github.com/developer0hye
