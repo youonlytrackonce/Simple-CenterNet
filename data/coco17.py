@@ -63,8 +63,6 @@ class COCODetection(object):
             image_path, label = self.read_coco_data(id)
             self.images_path.append(image_path)
             self.labels.append(label)
-
-        print("cache")
         
     def read_coco_data(self, id):
         image_info = self.coco.loadImgs(id)[0]
