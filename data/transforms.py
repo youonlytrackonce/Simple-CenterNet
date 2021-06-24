@@ -77,7 +77,9 @@ def random_translation(img, bboxes_cxcywh, p=1.0, border_value=(127, 127, 127)):
 
         min_ty = round(img_h * np.min(bboxes_xyxy[:, 1]))
         max_ty = img_h-round(img_h * np.max(bboxes_xyxy[:, 3]))
-
+        
+        if -min_tx >= max_tx or -min_ty >= max_ty: return img, bboxes_cxcywh
+        
         tx = random.randint(-min_tx, max_tx)
         ty = random.randint(-min_ty, max_ty)
 
