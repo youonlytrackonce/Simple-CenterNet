@@ -19,7 +19,7 @@ if __name__ == "__main__":
     parser.add_argument('--img-h', default=512, type=int)
 
     parser.add_argument('--weights', type=str, default="", help='load weights to resume training')
-    parser.add_argument('--data', type=str, default="voc0712.yaml")
+    parser.add_argument('--data', type=str, default="./data/voc0712.yaml")
     parser.add_argument('--num-workers', default=8, type=int, help='Number of workers used in dataloading')
     parser.add_argument('--flip', action='store_true')
     
