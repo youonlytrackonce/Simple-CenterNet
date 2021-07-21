@@ -38,6 +38,7 @@ if __name__ == "__main__":
     training_set = dataset.DetectionDataset(root=dataset_dict['root'], 
                                             dataset_name=dataset_dict['dataset_name'],
                                             set="train",
+                                            num_classes=len(dataset_dict['classes']),
                                             img_w=opt.img_w, img_h=opt.img_h,
                                             use_augmentation=True,
                                             keep_ratio=True)
@@ -75,40 +76,49 @@ if __name__ == "__main__":
     writer = SummaryWriter()
     for epoch in range(start_epoch, opt.total_epoch):
         model.train()
+        
+        import time
+        t1 = time.time()
         for i, batch_data in enumerate(training_set_loader):
-            
             n_iteration = (iterations_per_epoch * epoch) + i
             
             batch_img = batch_data["img"].to(device)
-            batch_label = batch_data["label"]
+            #batch_label = batch_data["label"]
             
-            #forward
+            # #forward
             with torch.cuda.amp.autocast():
-                batch_output = model(batch_img)
-                loss, losses = model.compute_loss(batch_output, batch_label)
-            
-            writer.add_scalar('train/loss_offset_xy', losses[0].item(), n_iteration)
-            writer.add_scalar('train/loss_wh', losses[1].item(), n_iteration)
-            writer.add_scalar('train/loss_class_heatmap', losses[2].item(), n_iteration)
-            writer.add_scalar('train/loss', loss.item(), n_iteration)
-            writer.add_scalar('train/lr', common.get_lr(optimizer), n_iteration)
+               batch_output = model(batch_img)
+            #     torch.cuda.synchronize()
+            #     t3 = time.time()
+            #     loss, losses = model.compute_loss(batch_output, batch_label)
+            #     #model.compute_loss(batch_output, batch_label)
+            #     torch.cuda.synchronize()
+            #     t4 = time.time()
+            #     print(t4-t3)
+            # writer.add_scalar('train/loss_offset_xy', losses[0].item(), n_iteration)
+            # writer.add_scalar('train/loss_wh', losses[1].item(), n_iteration)
+            # writer.add_scalar('train/loss_class_heatmap', losses[2].item(), n_iteration)
+            # writer.add_scalar('train/loss', loss.item(), n_iteration)
+            # writer.add_scalar('train/lr', common.get_lr(optimizer), n_iteration)
 
             #backword
-            loss = loss / iters_to_accumulate
-            scaler.scale(loss).backward()
+            # loss = loss / iters_to_accumulate
+            # # scaler.scale(loss).backward()
 
-            if (n_iteration + 1) % iters_to_accumulate == 0:
-                scaler.step(optimizer)
-                scaler.update()
-                optimizer.zero_grad()
+            # if (n_iteration + 1) % iters_to_accumulate == 0:
+            #     # scaler.step(optimizer)
+            #     # scaler.update()
+            #     optimizer.zero_grad()
 
-            if n_iteration > warmup_iteration:
-                scheduler.step()
-            else:
-                lr = initial_lr * float(n_iteration) / warmup_iteration
-                for param_group in optimizer.param_groups:
-                    param_group['lr'] = lr
+            # if n_iteration > warmup_iteration:
+            #     scheduler.step()
+            # else:
+            #     lr = initial_lr * float(n_iteration) / warmup_iteration
+            #     for param_group in optimizer.param_groups:
+            #         param_group['lr'] = lr
+        t2 = time.time()
         
+        print(t2-t1)
         checkpoint = {
         'epoch': epoch,# zero indexing
         'model_state_dict': model.state_dict(),
@@ -121,3 +131,5 @@ if __name__ == "__main__":
         
         torch.save(checkpoint, os.path.join(opt.save_folder, 'epoch_' + str(epoch + 1) + '.pth'))
         
+
+# 130초

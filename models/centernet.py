@@ -189,9 +189,15 @@ class CenterNet(nn.Module):
         batch_loss_h = torch.tensor(0., dtype=dtype, device=device)
         batch_loss_class_heatmap = torch.tensor(0., dtype=dtype, device=device)
         
+        # batch_label["bboxes_regression"] = batch_label["bboxes_regression"].to(device)
+        # batch_label["classes_gaussian_heatmap"] = batch_label["classes_gaussian_heatmap"].to(device)
+        # batch_label["foreground"] = batch_label["foreground"].to(device)
+        '''
         for idx in range(batch_size):
             pred = batch_pred[idx]
-            
+            continue
+        return None
+        
             label = batch_label[idx].to(device)
 
             label[:, [1, 3]] *= heatmap_w
@@ -231,13 +237,15 @@ class CenterNet(nn.Module):
             batch_loss_w += (loss_w/num_positive_samples)
             batch_loss_h += (loss_h/num_positive_samples)
             batch_loss_class_heatmap += (loss_class_heatmap/num_positive_samples)
+             '''
              
         batch_loss_offset_xy = (batch_loss_offset_x + batch_loss_offset_y)/2./batch_size
         batch_loss_wh = 0.1 * (batch_loss_w + batch_loss_h)/2./batch_size
         batch_loss_class_heatmap = batch_loss_class_heatmap/batch_size
         loss = batch_loss_offset_xy + batch_loss_wh + batch_loss_class_heatmap
         return loss, [batch_loss_offset_xy, batch_loss_wh, batch_loss_class_heatmap]
-
+       
+        
 # Gaussan Kernels for Training Class Heatmap, read Training-Time-Friendly Network for Real-Time Object Detection paper for more details
 def scatter_gaussian_kernel(heatmap, bbox_icx, bbox_icy, bbox_w, bbox_h, alpha=0.54):
     heatmap_h, heatmap_w = heatmap.shape

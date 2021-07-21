@@ -13,7 +13,8 @@ class DetectionDataset(Dataset):  # for training/testing
                  root,
                  dataset_name,
                  set,
-                 img_w=512, img_h=512,
+                 num_classes=20,
+                 img_w=512, img_h=512, stride=4,
                  use_augmentation=False,
                  keep_ratio=False):
         
@@ -40,10 +41,18 @@ class DetectionDataset(Dataset):  # for training/testing
         elif dataset_name == "custom":
             pass
         
+        self.num_classes = num_classes
+        
         self.img_w = img_w
         self.img_h = img_h
+        self.stride = stride
+        
+        self.heatmap_w = img_w // stride
+        self.heatmap_h = img_h // stride
+        
         self.keep_ratio = keep_ratio
         self.use_augmentation = use_augmentation
+        
         
     def __getitem__(self, idx):
         img, label = self.dataset[idx]
@@ -77,11 +86,39 @@ class DetectionDataset(Dataset):  # for training/testing
         img = torch.tensor(img, dtype=torch.float32)/255.
         
         label = np.concatenate([bboxes_class, bboxes_cxcywh], axis=1)
-        label = torch.tensor(label, dtype=torch.float32)
+        label[:, 1:] = np.clip(label[:, 1:], a_min=0., a_max=1.)
+
+        label[:, [1, 3]] *= self.heatmap_w
+        label[:, [2, 4]] *= self.heatmap_h
+        
+        label = label[ (label[:, 3] * self.stride >= 3) & (label[:, 4] * self.stride >= 3) ] # size filtering
+        
+        bboxes_regression = np.zeros(shape=(self.heatmap_h, self.heatmap_w, 4), dtype=np.float32)
+        classes_gaussian_heatmap = np.zeros(shape=(self.heatmap_h, self.heatmap_w, self.num_classes), dtype=np.float32)
+        foreground = np.zeros(shape=(self.heatmap_h, self.heatmap_w), dtype=np.float32)
+        
+        for bbox in label:
+            bbox_class = int(bbox[0])
+            
+            bbox_fcx, bbox_fcy, bbox_w, bbox_h = bbox[1:]
+            bbox_icx, bbox_icy = int(bbox_fcx), int(bbox_fcy)
+
+            foreground[bbox_icy, bbox_icx] = 1
+            
+            bboxes_regression[bbox_icy, bbox_icx, 0] = bbox_fcx-bbox_icx
+            bboxes_regression[bbox_icy, bbox_icx, 1] = bbox_fcy-bbox_icy
+            bboxes_regression[bbox_icy, bbox_icx, 2] = bbox_w
+            bboxes_regression[bbox_icy, bbox_icx, 3] = bbox_h
+            
+            classes_gaussian_heatmap[..., bbox_class] = transforms.scatter_gaussian_kernel(classes_gaussian_heatmap[..., bbox_class], bbox_icx, bbox_icy, bbox_w.item(), bbox_h.item())
+        
+        bboxes_regression = torch.tensor(bboxes_regression)
+        classes_gaussian_heatmap = torch.tensor(classes_gaussian_heatmap)
+        foreground = torch.tensor(foreground)
 
         data = {}
         data["img"] = img
-        data["label"] = label
+        data["label"] = {"bboxes_regression": bboxes_regression, "classes_gaussian_heatmap": classes_gaussian_heatmap, "foreground": foreground}
         data["idx"] = idx
         data["org_img_shape"] = org_img_shape
         data["padded_ltrb"] = padded_ltrb
@@ -94,23 +131,30 @@ class DetectionDataset(Dataset):  # for training/testing
 def collate_fn(batch_data):
 
     batch_img = []
-    batch_label = []
+    batch_bboxes_regression = []
+    batch_classes_gaussian_heatmap = []
+    batch_foreground = []
     batch_idx = []
     batch_org_img_shape = []
     batch_padded_ltrb = []
 
     for data in batch_data:
         batch_img.append(data["img"])
-        batch_label.append(data["label"])
+        batch_bboxes_regression.append(data["label"]["bboxes_regression"])
+        batch_classes_gaussian_heatmap.append(data["label"]["classes_gaussian_heatmap"])
+        batch_foreground.append(data["label"]["foreground"])
         batch_idx.append(data["idx"])
         batch_org_img_shape.append(data["org_img_shape"])
         batch_padded_ltrb.append(data["padded_ltrb"])
 
     batch_img = torch.stack(batch_img, 0)
+    batch_bboxes_regression = torch.stack(batch_bboxes_regression, 0)
+    batch_classes_gaussian_heatmap = torch.stack(batch_classes_gaussian_heatmap, 0)
+    batch_foreground = torch.stack(batch_foreground, 0)
     
     batch_data = {}
     batch_data["img"] = batch_img
-    batch_data["label"] = batch_label
+    batch_data["label"] =  {"bboxes_regression": batch_bboxes_regression, "classes_gaussian_heatmap": batch_classes_gaussian_heatmap, "foreground": batch_foreground}
     batch_data["idx"] = batch_idx
     batch_data["org_img_shape"] = batch_org_img_shape
     batch_data["padded_ltrb"] = batch_padded_ltrb
