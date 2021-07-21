@@ -208,15 +208,13 @@ class CenterNet(nn.Module):
             loss_w = torch.tensor(0., dtype=dtype, device=device)
             loss_h = torch.tensor(0., dtype=dtype, device=device)
 
+            label = label[ (label[:, 3] * self.stride >= 3) & (label[:, 4] * self.stride >= 3) ] # size filtering
             for bbox in label:
                 bbox_class = int(bbox[0])
                 
                 bbox_fcx, bbox_fcy, bbox_w, bbox_h = bbox[1:]
                 bbox_icx, bbox_icy = int(bbox_fcx), int(bbox_fcy)
-                
-                if bbox_w * self.stride < 3. or bbox_h * self.stride < 3.:
-                    continue
-                
+
                 num_positive_samples += 1.
                 
                 loss_offset_x += loss_offset_xy_function(pred[0, bbox_icy, bbox_icx], bbox_fcx-torch.floor(bbox_fcx))
