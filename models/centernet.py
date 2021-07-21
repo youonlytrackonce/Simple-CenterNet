@@ -193,7 +193,6 @@ class CenterNet(nn.Module):
             pred = batch_pred[idx]
             
             label = batch_label[idx].to(device)
-            label[:, 1] = torch.clamp(label[:, 1], min=0., max=1.)
 
             label[:, [1, 3]] *= heatmap_w
             label[:, [2, 4]] *= heatmap_h
