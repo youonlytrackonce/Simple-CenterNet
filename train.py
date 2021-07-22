@@ -38,6 +38,7 @@ if __name__ == "__main__":
     training_set = dataset.DetectionDataset(root=dataset_dict['root'], 
                                             dataset_name=dataset_dict['dataset_name'],
                                             set="train",
+                                            num_classes=len(dataset_dict['classes']),
                                             img_w=opt.img_w, img_h=opt.img_h,
                                             use_augmentation=True,
                                             keep_ratio=True)
