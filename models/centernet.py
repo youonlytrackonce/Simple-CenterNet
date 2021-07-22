@@ -182,6 +182,10 @@ class CenterNet(nn.Module):
         
         loss_offset_xy_function = nn.L1Loss(reduction='none')
         loss_wh_function = nn.L1Loss(reduction='none')
+
+        batch_label["bboxes_regression"] = batch_label["bboxes_regression"].to(device)
+        batch_label["classes_gaussian_heatmap"] = batch_label["classes_gaussian_heatmap"].to(device)
+        batch_label["foreground"] = batch_label["foreground"].to(device)
         
         batch_loss_offset_x = torch.tensor(0., dtype=dtype, device=device)
         batch_loss_offset_y = torch.tensor(0., dtype=dtype, device=device)
@@ -189,38 +193,31 @@ class CenterNet(nn.Module):
         batch_loss_h = torch.tensor(0., dtype=dtype, device=device)
         batch_loss_class_heatmap = torch.tensor(0., dtype=dtype, device=device)
         
-        batch_label["bboxes_regression"] = batch_label["bboxes_regression"].to(device)
-        batch_label["classes_gaussian_heatmap"] = batch_label["classes_gaussian_heatmap"].to(device)
-        batch_label["foreground"] = batch_label["foreground"].to(device)
-        
         positive_samples = batch_label["foreground"] == 1.
         num_positive_samples = torch.count_nonzero(batch_label["foreground"])
         
         if num_positive_samples > 0:
-            batch_loss_offset_x += torch.sum(loss_offset_xy_function(batch_pred[:, 0], batch_label["bboxes_regression"][:, 0])[positive_samples])/num_positive_samples
-            batch_loss_offset_y += torch.sum(loss_offset_xy_function(batch_pred[:, 1], batch_label["bboxes_regression"][:, 1])[positive_samples])/num_positive_samples
-            batch_loss_w += torch.sum(loss_wh_function(batch_pred[:, 2], batch_label["bboxes_regression"][:, 2])[positive_samples])/num_positive_samples
-            batch_loss_h += torch.sum(loss_wh_function(batch_pred[:, 3], batch_label["bboxes_regression"][:, 3])[positive_samples])/num_positive_samples
+            batch_loss_offset_x = loss_offset_xy_function(batch_pred[:, 0], batch_label["bboxes_regression"][:, 0]) * positive_samples/batch_size
+            batch_loss_offset_y = loss_offset_xy_function(batch_pred[:, 1], batch_label["bboxes_regression"][:, 1]) * positive_samples/batch_size
+            batch_loss_w = loss_wh_function(batch_pred[:, 2], batch_label["bboxes_regression"][:, 2]) * positive_samples/batch_size
+            batch_loss_h = loss_wh_function(batch_pred[:, 3], batch_label["bboxes_regression"][:, 3]) * positive_samples/batch_size
             
-        batch_loss_class_heatmap += focal_loss(batch_pred[:, 4:], batch_label["classes_gaussian_heatmap"])/max(num_positive_samples, batch_size)
+        batch_loss_class_heatmap = focal_loss(batch_pred[:, 4:], batch_label["classes_gaussian_heatmap"])/batch_size
         
-        # for idx in range(batch_size):
-        #     pred = batch_pred[idx]
-
-        #     positive_samples = batch_label["foreground"][idx] == 1.
-        #     num_positive_samples = torch.count_nonzero(batch_label["foreground"][idx])
+        for idx in range(batch_size):
+            positive_samples = batch_label["foreground"][idx] == 1.
+            num_positive_samples = torch.count_nonzero(batch_label["foreground"][idx])
             
-        #     if num_positive_samples > 0:
-        #         batch_loss_offset_x += torch.sum(loss_offset_xy_function(pred[0], batch_label["bboxes_regression"][idx][0])[positive_samples])/num_positive_samples
-        #         batch_loss_offset_y += torch.sum(loss_offset_xy_function(pred[1], batch_label["bboxes_regression"][idx][1])[positive_samples])/num_positive_samples
-        #         batch_loss_w += torch.sum(loss_wh_function(pred[2], batch_label["bboxes_regression"][idx][2])[positive_samples])/num_positive_samples
-        #         batch_loss_h += torch.sum(loss_wh_function(pred[3], batch_label["bboxes_regression"][idx][3])[positive_samples])/num_positive_samples
-                
-        #     batch_loss_class_heatmap += focal_loss(pred[4:], batch_label["classes_gaussian_heatmap"][idx])/max(num_positive_samples, 1)
+            if num_positive_samples > 0:
+                batch_loss_offset_x[idx] /= num_positive_samples
+                batch_loss_offset_y[idx] /= num_positive_samples
+                batch_loss_w[idx] /= num_positive_samples
+                batch_loss_h[idx] /= num_positive_samples
+                batch_loss_class_heatmap[idx] /= num_positive_samples
 
-        batch_loss_offset_xy = (batch_loss_offset_x + batch_loss_offset_y)/2.
-        batch_loss_wh = 0.1 * (batch_loss_w + batch_loss_h)/2.
-        batch_loss_class_heatmap = batch_loss_class_heatmap
+        batch_loss_offset_xy = torch.sum(batch_loss_offset_x + batch_loss_offset_y)/2.
+        batch_loss_wh = 0.1 * torch.sum(batch_loss_w + batch_loss_h)/2.
+        batch_loss_class_heatmap = torch.sum(batch_loss_class_heatmap)
         loss = batch_loss_offset_xy + batch_loss_wh + batch_loss_class_heatmap
         return loss, [batch_loss_offset_xy, batch_loss_wh, batch_loss_class_heatmap]
        
@@ -252,8 +249,8 @@ def focal_loss(pred, gaussian_kernel, alpha=2., beta=4., eps=1e-5):
     positive_mask = gaussian_kernel == 1.
     negative_mask = ~positive_mask
 
-    positive_loss = torch.sum(-(((1. - pred) ** alpha) * torch.log(pred)) * positive_mask.float())
-    negative_loss = torch.sum(-(((1. - gaussian_kernel) ** beta) * (pred ** alpha) * torch.log(1.-pred)) * negative_mask.float())
+    positive_loss = -(((1. - pred) ** alpha) * torch.log(pred)) * positive_mask.float()
+    negative_loss = -(((1. - gaussian_kernel) ** beta) * (pred ** alpha) * torch.log(1.-pred)) * negative_mask.float()
     
     if torch.count_nonzero(positive_mask) == 0:
         return negative_loss
