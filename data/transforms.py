@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
+import torch
 import random
+
 
 def cxcywh2xyxy(bboxes_cxcywh: np.ndarray):
     bboxes_xyxy = bboxes_cxcywh.copy()
@@ -405,4 +407,20 @@ def draw_bboxes(img, bboxes_cxcywh):
                       (int(bbox_xyxy[0]), int(bbox_xyxy[1])),
                       (int(bbox_xyxy[2]), int(bbox_xyxy[3])),
                       (0, 255, 0),2)
-        
+
+def scatter_gaussian_kernel(heatmap, bbox_icx, bbox_icy, bbox_w, bbox_h, alpha=0.54):
+    heatmap_h, heatmap_w = heatmap.shape
+    dtype = heatmap.dtype
+    
+    std_w = alpha * bbox_w/6.
+    std_h = alpha * bbox_h/6.
+    
+    var_w = std_w ** 2
+    var_h = std_h ** 2
+
+    grid_x, grid_y = np.meshgrid(np.arange(heatmap_w, dtype=dtype), np.arange(heatmap_h, dtype=dtype))
+
+    gaussian_kernel = np.exp(-((grid_x - bbox_icx)**2/(2. * var_w))-((grid_y - bbox_icy)**2/(2. * var_h)))
+    gaussian_kernel[bbox_icy, bbox_icx] = 1.
+    heatmap = np.maximum(heatmap, gaussian_kernel)
+    return heatmap

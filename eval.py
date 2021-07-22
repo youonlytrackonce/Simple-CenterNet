@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
         for batch_data in test_set_loader:
             batch_img = batch_data["img"].to(device)
-            batch_label = batch_data["label"]
+            batch_label = batch_data["label"]["annotations"]
             batch_idx = batch_data["idx"]
             batch_org_img_shape = batch_data["org_img_shape"]
             batch_padded_ltrb = batch_data["padded_ltrb"]
