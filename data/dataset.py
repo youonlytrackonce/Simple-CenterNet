@@ -99,21 +99,21 @@ class DetectionDataset(Dataset):  # for training/testing
         classes_gaussian_heatmap = np.zeros(shape=(self.num_classes, self.heatmap_h, self.heatmap_w), dtype=np.float32)
         foreground = np.zeros(shape=(self.heatmap_h, self.heatmap_w), dtype=np.float32)
         
+        bboxes_icx = label[:, 1].astype(np.int)
+        bboxes_icy = label[:, 2].astype(np.int)
+        
+        foreground[bboxes_icy, bboxes_icx] = 1
+        bboxes_regression[0, bboxes_icy, bboxes_icx] = label[:, 1] - bboxes_icx
+        bboxes_regression[1, bboxes_icy, bboxes_icx] = label[:, 2] - bboxes_icy
+        bboxes_regression[2, bboxes_icy, bboxes_icx] = label[:, 3]
+        bboxes_regression[3, bboxes_icy, bboxes_icx] = label[:, 4]
+        
         for bbox in label:
             bbox_class = int(bbox[0])
-            
             bbox_fcx, bbox_fcy, bbox_w, bbox_h = bbox[1:]
-            bbox_icx, bbox_icy = int(bbox_fcx), int(bbox_fcy)
-
-            foreground[bbox_icy, bbox_icx] = 1
-            
-            bboxes_regression[0, bbox_icy, bbox_icx] = bbox_fcx-bbox_icx
-            bboxes_regression[1, bbox_icy, bbox_icx] = bbox_fcy-bbox_icy
-            bboxes_regression[2, bbox_icy, bbox_icx] = bbox_w
-            bboxes_regression[3, bbox_icy, bbox_icx] = bbox_h
-            
+            bbox_icx, bbox_icy = int(bbox_fcx), int(bbox_fcy)            
             classes_gaussian_heatmap[bbox_class] = transforms.scatter_gaussian_kernel(classes_gaussian_heatmap[bbox_class], bbox_icx, bbox_icy, bbox_w.item(), bbox_h.item())
-        
+
         annotations = torch.tensor(annotations)
         bboxes_regression = torch.tensor(bboxes_regression)
         classes_gaussian_heatmap = torch.tensor(classes_gaussian_heatmap)
