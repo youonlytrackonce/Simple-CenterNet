@@ -57,7 +57,7 @@ if __name__ == "__main__":
     for param_group in optimizer.param_groups:
         param_group['lr'] = 0.
     
-    iterations_per_epoch = common.get_iterations_per_epoch(training_set, opt.forward_batch_size)
+    iterations_per_epoch = len(training_set_loader)
     total_iteration =  iterations_per_epoch * opt.total_epoch
 
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=total_iteration)
