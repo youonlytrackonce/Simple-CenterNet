@@ -153,7 +153,7 @@ class CenterNet(nn.Module):
         with torch.no_grad():
             filtered_batch_bboxes = []
             for bboxes, org_img_shape, padded_ltrb in zip(batch_bboxes, batch_org_img_shape, batch_padded_ltrb):
-                filtered_bboxes = {"class": np.zeros((0, 1)), "position:": np.zeros((0, 4)), "confidence": np.zeros((0, 1)), "num_detected_bboxes": 0}
+                filtered_bboxes = {"class": np.zeros((0, 1)), "position": np.zeros((0, 4)), "confidence": np.zeros((0, 1)), "num_detected_bboxes": 0}
                 
                 bboxes_confidence = bboxes[:, 5]
                 confidence_mask = bboxes_confidence > confidence_threshold
