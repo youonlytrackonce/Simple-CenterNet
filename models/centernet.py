@@ -136,7 +136,7 @@ class CenterNet(nn.Module):
             _, topk_inds = torch.topk(class_heatmap, k=self.max_num_dets, dim=1)
             
             out = [torch.gather(x, dim=1, index=topk_inds) 
-                   for x in [class_idx, bboxes_cx, bboxes_cy, bboxes_w, bboxes_h, class_heatmap]]
+                   for x in [class_idx.float(), bboxes_cx, bboxes_cy, bboxes_w, bboxes_h, class_heatmap]]
             out = torch.stack(out, dim=2) # [B, self.max_num_dets, 6]
             return out
     
