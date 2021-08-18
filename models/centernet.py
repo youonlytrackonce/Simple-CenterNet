@@ -132,11 +132,12 @@ class CenterNet(nn.Module):
             class_heatmap = torch.sigmoid(out[:, 4:])# [B, 20, H, W]
             class_heatmap = self.nms(class_heatmap).flatten(start_dim=2).transpose(1, 2) # [B, 20, H*W] -> # [B, H*W, 20]
             class_heatmap, class_idx = torch.max(class_heatmap, dim=2) # [B, H*W]
+            class_idx = class_idx.to(dtype=out.dtype)
             
             _, topk_inds = torch.topk(class_heatmap, k=self.max_num_dets, dim=1)
             
             out = [torch.gather(x, dim=1, index=topk_inds) 
-                   for x in [class_idx.float(), bboxes_cx, bboxes_cy, bboxes_w, bboxes_h, class_heatmap]]
+                   for x in [class_idx, bboxes_cx, bboxes_cy, bboxes_w, bboxes_h, class_heatmap]]
             out = torch.stack(out, dim=2) # [B, self.max_num_dets, 6]
             return out
     
