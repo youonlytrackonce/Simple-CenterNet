@@ -198,9 +198,9 @@ class CenterNet(nn.Module):
         batch_loss_offset_y = loss_offset_xy_function(batch_pred[:, 1], batch_label["bboxes_regression"][:, 1]) * batch_label["foreground"]/batch_size
         batch_loss_w = loss_wh_function(batch_pred[:, 2], batch_label["bboxes_regression"][:, 2]) * batch_label["foreground"]/batch_size
         batch_loss_h = loss_wh_function(batch_pred[:, 3], batch_label["bboxes_regression"][:, 3]) * batch_label["foreground"]/batch_size
-        
-        batch_loss_class_heatmap = focal_loss(batch_pred[:, 4:], batch_label["classes_gaussian_heatmap"])/batch_size
-        
+
+        batch_loss_class_heatmap = focal_loss_v2(batch_pred[:, 4:], batch_label["classes_gaussian_heatmap"])/batch_size
+
         batch_loss_offset_x = batch_loss_offset_x.flatten(1).sum(1)
         batch_loss_offset_y = batch_loss_offset_y.flatten(1).sum(1)
         batch_loss_w = batch_loss_w.flatten(1).sum(1)
@@ -258,3 +258,22 @@ def focal_loss(pred, gaussian_kernel, alpha=2., beta=4., eps=1e-5):
         return positive_loss
     else:
         return negative_loss + positive_loss
+
+def focal_loss_v2(pred, gaussian_kernel, alpha=2., beta=4.):
+    bce_loss_function = nn.BCEWithLogitsLoss(reduction='none')
+        
+    gt = (gaussian_kernel == 1.).float()
+    
+    positive_mask = gaussian_kernel == 1.
+    negative_mask = ~positive_mask
+    
+    loss = bce_loss_function(pred, gt)
+    
+    if torch.count_nonzero(positive_mask) > 0:
+        loss[positive_mask] *= (1. - pred[positive_mask].sigmoid()) ** alpha
+        
+    if torch.count_nonzero(negative_mask) > 0:
+        loss[negative_mask] *= ((1. - gaussian_kernel[negative_mask]) ** beta) * (pred[negative_mask].sigmoid() ** alpha)
+        
+    return loss
+
